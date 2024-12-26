@@ -1,6 +1,8 @@
 #include <string>
-#include <DesktopTown/WindowManager.hpp>
+#include <DesktopTown/Context.hpp>
 #include <GL/glew.h>
+
+#include "DesktopTown/GL.hpp"
 
 static void on_error(const int error_code, const char* description)
 {
@@ -8,18 +10,19 @@ static void on_error(const int error_code, const char* description)
 }
 
 static void APIENTRY on_debug(
-    const GLenum source,
-    const GLenum type,
+    const GLenum /*source*/,
+    const GLenum /*type*/,
     const GLuint id,
-    const GLenum severity,
+    const GLenum /*severity*/,
     const GLsizei length,
     const GLchar* message,
-    const void* user_param)
+    const void* /*user_param*/)
 {
     fprintf(stderr, "[OpenGL 0x%08X] %.*s\r\n", id, length, message);
 }
 
-DesktopTown::WindowManager::WindowManager()
+DesktopTown::Context::Context(ContextInfo&& info)
+    : m_Info(info)
 {
     glfwSetErrorCallback(on_error);
     glfwInit();
@@ -48,6 +51,8 @@ DesktopTown::WindowManager::WindowManager()
         glfwSetWindowMonitor(m_Window, nullptr, xpos, ypos, width, height, GLFW_DONT_CARE);
     }
 
+    glfwHideTaskbarIcon(m_Window);
+
     glfwMakeContextCurrent(m_Window);
     glfwSwapInterval(1);
 
@@ -56,13 +61,17 @@ DesktopTown::WindowManager::WindowManager()
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(on_debug, m_Window);
+    glDebugMessageCallback(on_debug, this);
 
     glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
+
+    Start();
 
     while (!glfwWindowShouldClose(m_Window))
     {
         glfwPollEvents();
+
+        Update();
 
         int width, height;
         glfwGetFramebufferSize(m_Window, &width, &height);
@@ -70,14 +79,38 @@ DesktopTown::WindowManager::WindowManager()
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // render NPCs, buildings, etc.
+        // render text, info boxes, buttons, etc.
         // ...
 
         glfwSwapBuffers(m_Window);
     }
+
+    Stop();
 }
 
-DesktopTown::WindowManager::~WindowManager()
+DesktopTown::Context::~Context()
 {
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+}
+
+void DesktopTown::Context::Start()
+{
+    // load shaders, models, textures, etc.
+    // load save file
+    // ...
+    m_Info.OnStart(*this);
+}
+
+void DesktopTown::Context::Update()
+{
+    // update NPCs, animations, etc.
+    // ...
+    m_Info.OnUpdate(*this);
+}
+
+void DesktopTown::Context::Stop()
+{
+    m_Info.OnStop(*this);
 }
