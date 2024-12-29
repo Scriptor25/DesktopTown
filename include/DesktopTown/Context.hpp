@@ -19,6 +19,8 @@ namespace DesktopTown
         explicit Context(ContextInfo&& info);
         ~Context();
 
+        void GetSize(int& width, int& height) const;
+
     private:
         void Start();
         void Update();

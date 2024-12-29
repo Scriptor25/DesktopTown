@@ -52,8 +52,8 @@ namespace DesktopTown
         template <unsigned N>
         std::array<GLint, N> GetParams(const GLenum pname) const
         {
-            GLint params[N];
-            glGetShaderiv(ID, pname, params);
+            std::array<GLint, N> params;
+            glGetShaderiv(ID, pname, params.data());
             return params;
         }
 
@@ -81,16 +81,16 @@ namespace DesktopTown
         template <unsigned N>
         std::array<GLint, N> GetParams(const GLenum pname) const
         {
-            GLint params[N];
-            glGetProgramiv(ID, pname, params);
+            std::array<GLint, N> params;
+            glGetProgramiv(ID, pname, params.data());
             return params;
         }
 
         template <unsigned N>
         std::array<GLint, N> GetStageParams(const GLenum type, const GLenum pname) const
         {
-            GLint params[N];
-            glGetProgramStageiv(ID, type, pname, params);
+            std::array<GLint, N> params;
+            glGetProgramStageiv(ID, type, pname, params.data());
             return params;
         }
 
@@ -99,8 +99,8 @@ namespace DesktopTown
         template <unsigned N>
         std::array<GLint, N> GetInterfaceParams(const GLenum interface, const GLenum pname) const
         {
-            GLint params[N];
-            glGetProgramInterfaceiv(ID, interface, pname, params);
+            std::array<GLint, N> params;
+            glGetProgramInterfaceiv(ID, interface, pname, params.data());
             return params;
         }
 
@@ -214,8 +214,8 @@ namespace DesktopTown
         template <unsigned N>
         std::array<GLint, N> GetParams(const GLenum pname, const unsigned index = 0u) const
         {
-            GLint params[N];
-            glGetProgramPipelineiv(IDs.at(index), pname, params);
+            std::array<GLint, N> params;
+            glGetProgramPipelineiv(IDs.at(index), pname, params.data());
             return params;
         }
 
@@ -225,6 +225,42 @@ namespace DesktopTown
         void UseProgramStages(GLbitfield stages, const GLProgram& program, unsigned index = 0u) const;
         void Validate(unsigned index = 0u) const;
         void Bind(unsigned index = 0u) const;
+
+    private:
+        std::vector<GLuint> IDs;
+    };
+
+    class GLVertexArrays
+    {
+    public:
+        explicit GLVertexArrays(GLsizei n = 1);
+        ~GLVertexArrays();
+
+        void Bind(unsigned index = 0u) const;
+
+    private:
+        std::vector<GLuint> IDs;
+    };
+
+    class GLBuffers
+    {
+    public:
+        explicit GLBuffers(GLsizei n = 1);
+        ~GLBuffers();
+
+        void Bind(GLenum target, unsigned index = 0u) const;
+
+    private:
+        std::vector<GLuint> IDs;
+    };
+
+    class GLTextures
+    {
+    public:
+        explicit GLTextures(GLsizei n = 1);
+        ~GLTextures();
+
+        void Bind(GLenum target, GLuint index = 0u) const;
 
     private:
         std::vector<GLuint> IDs;

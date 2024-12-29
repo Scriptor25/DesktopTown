@@ -71,8 +71,6 @@ DesktopTown::Context::Context(ContextInfo&& info)
     {
         glfwPollEvents();
 
-        Update();
-
         int width, height;
         glfwGetFramebufferSize(m_Window, &width, &height);
 
@@ -82,6 +80,7 @@ DesktopTown::Context::Context(ContextInfo&& info)
         // render NPCs, buildings, etc.
         // render text, info boxes, buttons, etc.
         // ...
+        Update();
 
         glfwSwapBuffers(m_Window);
     }
@@ -93,6 +92,11 @@ DesktopTown::Context::~Context()
 {
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+}
+
+void DesktopTown::Context::GetSize(int& width, int& height) const
+{
+    glfwGetFramebufferSize(m_Window, &width, &height);
 }
 
 void DesktopTown::Context::Start()
