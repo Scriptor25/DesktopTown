@@ -15,6 +15,20 @@ bool DesktopTown::GLProgram::IsValid() const
     return glIsProgram(ID);
 }
 
+GLint DesktopTown::GLProgram::GetParam(const GLenum pname) const
+{
+    GLint param;
+    glGetProgramiv(ID, pname, &param);
+    return param;
+}
+
+GLint DesktopTown::GLProgram::GetStageParam(const GLenum type, const GLenum pname) const
+{
+    GLint param;
+    glGetProgramStageiv(ID, type, pname, &param);
+    return param;
+}
+
 std::string DesktopTown::GLProgram::GetInfoLog() const
 {
     constexpr GLsizei BUF_SIZE = 1024;
@@ -22,6 +36,13 @@ std::string DesktopTown::GLProgram::GetInfoLog() const
     GLchar buf[1024];
     glGetProgramInfoLog(ID, BUF_SIZE, &length, buf);
     return {buf, static_cast<std::string::size_type>(length)};
+}
+
+GLint DesktopTown::GLProgram::GetInterfaceParam(const GLenum interface, const GLenum pname) const
+{
+    GLint param;
+    glGetProgramInterfaceiv(ID, interface, pname, &param);
+    return param;
 }
 
 std::vector<GLint> DesktopTown::GLProgram::GetResources(

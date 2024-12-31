@@ -58,34 +58,37 @@ static void on_start(DesktopTown::Context& ctx)
 
     vertex_array->Bind();
     vertex_buffer->Bind(GL_ARRAY_BUFFER);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+    vertex_buffer->Data<GLfloat>(GL_ARRAY_BUFFER, 6 * 4, GL_DYNAMIC_DRAW);
+    vertex_array->EnableVertexAttrib(0);
+    vertex_array->VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0u);
+    vertex_array->EnableVertexAttrib(1);
+    vertex_array->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 2 * sizeof(float));
 }
 
-static void on_update(DesktopTown::Context& ctx)
+static void on_update(DesktopTown::Context&)
 {
     font_context.DrawText(
         *program,
         *vertex_array,
         *vertex_buffer,
-        "Hello World!",
+        L"Hello World!",
         0.f,
-        96.f,
+        48.f,
         1.f,
-        {1.f, 1.f, 1.f});
+        {1.f, 0.f, 1.f});
     font_context.DrawText(
         *program,
         *vertex_array,
         *vertex_buffer,
-        "This is some more text.",
+        L"This Ä is Ö some Ü more ß text.",
         0.f,
         0.f,
-        1.f,
-        {1.f, 1.f, 1.f});
+        .5f,
+        {0.f, 1.f, 1.f});
+    font_context.DrawAtlas(*program, *vertex_array, *vertex_buffer, 0.f, 96.f, {});
 }
 
-static void on_stop(DesktopTown::Context& ctx)
+static void on_stop(DesktopTown::Context&)
 {
     delete program;
     delete vertex_array;

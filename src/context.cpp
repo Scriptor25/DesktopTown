@@ -94,6 +94,11 @@ DesktopTown::Context::~Context()
     glfwTerminate();
 }
 
+GLFWwindow* DesktopTown::Context::GetWindow() const
+{
+    return m_Window;
+}
+
 void DesktopTown::Context::GetSize(int& width, int& height) const
 {
     glfwGetFramebufferSize(m_Window, &width, &height);

@@ -6,6 +6,9 @@
 #include <freetype/freetype.h>
 #include <glm/glm.hpp>
 
+#include "FontContext.hpp"
+#include "FontContext.hpp"
+
 namespace DesktopTown
 {
     class FontContext
@@ -27,7 +30,7 @@ namespace DesktopTown
             const GLProgram& program,
             const GLVertexArrays& vertex_array,
             const GLBuffers& vertex_buffer,
-            const std::string& text,
+            const ::std::wstring& text,
             float start_x,
             float start_y,
             float scale,
@@ -43,6 +46,6 @@ namespace DesktopTown
     private:
         FT_Library m_FT;
         GLTextures m_Atlas;
-        std::map<int, Character> m_CharMap;
+        std::map<wchar_t, Character> m_CharMap;
     };
 }

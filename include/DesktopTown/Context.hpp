@@ -19,6 +19,7 @@ namespace DesktopTown
         explicit Context(ContextInfo&& info);
         ~Context();
 
+        GLFWwindow* GetWindow() const;
         void GetSize(int& width, int& height) const;
 
     private:

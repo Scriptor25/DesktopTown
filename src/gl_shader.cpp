@@ -15,6 +15,13 @@ bool DesktopTown::GLShader::IsValid() const
     return glIsShader(ID);
 }
 
+GLint DesktopTown::GLShader::GetParam(const GLenum pname) const
+{
+    GLint param;
+    glGetShaderiv(ID, pname, &param);
+    return param;
+}
+
 std::string DesktopTown::GLShader::GetInfoLog() const
 {
     constexpr GLsizei BUF_SIZE = 1024;

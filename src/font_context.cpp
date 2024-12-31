@@ -110,7 +110,7 @@ void DesktopTown::FontContext::DrawText(
     const GLProgram& program,
     const GLVertexArrays& vertex_array,
     const GLBuffers& vertex_buffer,
-    const std::string& text,
+    const std::wstring& text,
     const float start_x,
     const float start_y,
     const float scale,
@@ -140,14 +140,14 @@ void DesktopTown::FontContext::DrawText(
         const auto w = size_.x * scale;
         const auto h = size_.y * scale;
 
-        const float vertices[6][4] = {
-            {xpos, ypos + h, texture_.x, texture_.y},
-            {xpos, ypos, texture_.x, texture_.w},
-            {xpos + w, ypos, texture_.z, texture_.w},
+        const float vertices[6 * 4] = {
+            xpos, ypos + h, texture_.x, texture_.y,
+            xpos, ypos, texture_.x, texture_.w,
+            xpos + w, ypos, texture_.z, texture_.w,
 
-            {xpos, ypos + h, texture_.x, texture_.y},
-            {xpos + w, ypos, texture_.z, texture_.w},
-            {xpos + w, ypos + h, texture_.z, texture_.y}
+            xpos, ypos + h, texture_.x, texture_.y,
+            xpos + w, ypos, texture_.z, texture_.w,
+            xpos + w, ypos + h, texture_.z, texture_.y
         };
 
         vertex_buffer.Bind(GL_ARRAY_BUFFER);
@@ -179,14 +179,14 @@ void DesktopTown::FontContext::DrawAtlas(
 
     vertex_array.Bind();
 
-    const float vertices[6][4] = {
-        {start_x, start_y + height, 0.f, 0.f},
-        {start_x, start_y, 0.f, 1.f},
-        {start_x + width, start_y, 1.f, 1.f},
+    const float vertices[6 * 4] = {
+        start_x, start_y + height, 0.f, 0.f,
+        start_x, start_y, 0.f, 1.f,
+        start_x + width, start_y, 1.f, 1.f,
 
-        {start_x, start_y + height, 0.f, 0.f},
-        {start_x + width, start_y, 1.f, 1.f},
-        {start_x + width, start_y + height, 1.f, 0.f}
+        start_x, start_y + height, 0.f, 0.f,
+        start_x + width, start_y, 1.f, 1.f,
+        start_x + width, start_y + height, 1.f, 0.f
     };
 
     vertex_buffer.Bind(GL_ARRAY_BUFFER);

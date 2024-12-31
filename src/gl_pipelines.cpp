@@ -16,6 +16,13 @@ bool DesktopTown::GLPipelines::IsValid(const unsigned index) const
     return glIsProgramPipeline(IDs.at(index));
 }
 
+GLint DesktopTown::GLPipelines::GetParam(const GLenum pname, const unsigned index) const
+{
+    GLint param;
+    glGetProgramPipelineiv(IDs[index], pname, &param);
+    return param;
+}
+
 std::string DesktopTown::GLPipelines::GetInfoLog(const unsigned index) const
 {
     constexpr GLsizei BUF_SIZE = 1024;

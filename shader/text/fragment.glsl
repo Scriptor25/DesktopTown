@@ -2,7 +2,7 @@
 
 in vec2 v_Texture;
 
-layout (location = 0) out vec4 Color;
+out vec4 Color;
 
 uniform sampler2D TEXTURE;
 uniform vec3 COLOR;
