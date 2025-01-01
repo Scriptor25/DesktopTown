@@ -4,30 +4,24 @@
 
 namespace DesktopTown
 {
-    class Context;
-
-    struct ContextInfo
-    {
-        void (*OnStart)(Context& ctx);
-        void (*OnUpdate)(Context& ctx);
-        void (*OnStop)(Context& ctx);
-    };
-
     class Context
     {
     public:
-        explicit Context(ContextInfo&& info);
-        ~Context();
+        Context();
+        virtual ~Context();
 
-        GLFWwindow* GetWindow() const;
+        void Start();
+        void Stop() const;
+
+        [[nodiscard]] GLFWwindow* GetWindow() const;
         void GetSize(int& width, int& height) const;
 
-    private:
-        void Start();
-        void Update();
-        void Stop();
+    protected:
+        virtual void OnStart();
+        virtual void OnUpdate();
+        virtual void OnStop();
 
-        ContextInfo m_Info;
+    private:
         GLFWwindow* m_Window;
     };
 }

@@ -1,8 +1,6 @@
 #include <string>
 #include <DesktopTown/Context.hpp>
-#include <GL/glew.h>
-
-#include "DesktopTown/GL.hpp"
+#include <DesktopTown/GL.hpp>
 
 static void on_error(const int error_code, const char* description)
 {
@@ -21,8 +19,7 @@ static void APIENTRY on_debug(
     fprintf(stderr, "[OpenGL 0x%08X] %.*s\r\n", id, length, message);
 }
 
-DesktopTown::Context::Context(ContextInfo&& info)
-    : m_Info(info)
+DesktopTown::Context::Context()
 {
     glfwSetErrorCallback(on_error);
     glfwInit();
@@ -64,8 +61,17 @@ DesktopTown::Context::Context(ContextInfo&& info)
     glDebugMessageCallback(on_debug, this);
 
     glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
+}
 
-    Start();
+DesktopTown::Context::~Context()
+{
+    glfwDestroyWindow(m_Window);
+    glfwTerminate();
+}
+
+void DesktopTown::Context::Start()
+{
+    OnStart();
 
     while (!glfwWindowShouldClose(m_Window))
     {
@@ -77,21 +83,17 @@ DesktopTown::Context::Context(ContextInfo&& info)
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // render NPCs, buildings, etc.
-        // render text, info boxes, buttons, etc.
-        // ...
-        Update();
+        OnUpdate();
 
         glfwSwapBuffers(m_Window);
     }
 
-    Stop();
+    OnStop();
 }
 
-DesktopTown::Context::~Context()
+void DesktopTown::Context::Stop() const
 {
-    glfwDestroyWindow(m_Window);
-    glfwTerminate();
+    glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
 }
 
 GLFWwindow* DesktopTown::Context::GetWindow() const
@@ -104,22 +106,14 @@ void DesktopTown::Context::GetSize(int& width, int& height) const
     glfwGetFramebufferSize(m_Window, &width, &height);
 }
 
-void DesktopTown::Context::Start()
+void DesktopTown::Context::OnStart()
 {
-    // load shaders, models, textures, etc.
-    // load save file
-    // ...
-    m_Info.OnStart(*this);
 }
 
-void DesktopTown::Context::Update()
+void DesktopTown::Context::OnUpdate()
 {
-    // update NPCs, animations, etc.
-    // ...
-    m_Info.OnUpdate(*this);
 }
 
-void DesktopTown::Context::Stop()
+void DesktopTown::Context::OnStop()
 {
-    m_Info.OnStop(*this);
 }

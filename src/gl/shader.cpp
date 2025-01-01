@@ -1,8 +1,26 @@
 #include <DesktopTown/GL.hpp>
 
-DesktopTown::GLShader::GLShader(const GLenum type)
-    : ID(glCreateShader(type))
+DesktopTown::GLShader::GLShader(const GLuint id)
+    : GLObject(id)
 {
+}
+
+DesktopTown::GLShader::GLShader()
+    : GLObject(0)
+{
+}
+
+DesktopTown::GLShader::GLShader(GLShader&& other) noexcept
+    : GLObject(other.ID)
+{
+    other.ID = 0;
+}
+
+DesktopTown::GLShader& DesktopTown::GLShader::operator=(GLShader&& other) noexcept
+{
+    ID = other.ID;
+    other.ID = 0;
+    return *this;
 }
 
 DesktopTown::GLShader::~GLShader()
@@ -55,4 +73,9 @@ void DesktopTown::GLShader::SetSource(const std::string& source) const
 void DesktopTown::GLShader::Compile() const
 {
     glCompileShader(ID);
+}
+
+DesktopTown::GLShader DesktopTown::GLShader::Create(const GLenum type)
+{
+    return GLShader(glCreateShader(type));
 }

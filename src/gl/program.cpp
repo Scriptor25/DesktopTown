@@ -1,8 +1,26 @@
 #include <DesktopTown/GL.hpp>
 
-DesktopTown::GLProgram::GLProgram()
-    : ID(glCreateProgram())
+DesktopTown::GLProgram::GLProgram(const GLuint id)
+    : GLObject(id)
 {
+}
+
+DesktopTown::GLProgram::GLProgram()
+    : GLObject(0)
+{
+}
+
+DesktopTown::GLProgram::GLProgram(GLProgram&& other) noexcept
+    : GLObject(other.ID)
+{
+    other.ID = 0;
+}
+
+DesktopTown::GLProgram& DesktopTown::GLProgram::operator=(GLProgram&& other) noexcept
+{
+    ID = other.ID;
+    other.ID = 0;
+    return *this;
 }
 
 DesktopTown::GLProgram::~GLProgram()
@@ -156,4 +174,9 @@ void DesktopTown::GLProgram::Validate() const
 void DesktopTown::GLProgram::Use() const
 {
     glUseProgram(ID);
+}
+
+DesktopTown::GLProgram DesktopTown::GLProgram::Create()
+{
+    return GLProgram(glCreateProgram());
 }

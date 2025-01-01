@@ -39,17 +39,33 @@ namespace DesktopTown
         UNIFORM_MATRIX_4_4,
     };
 
-    class GLShader
+    class GLObject
+    {
+    public:
+        GLObject(const GLObject&) = delete;
+        GLObject& operator=(const GLObject&) = delete;
+        virtual ~GLObject() = default;
+
+    protected:
+        explicit GLObject(GLuint id);
+
+        GLuint ID;
+    };
+
+    class GLShader final : public GLObject
     {
         friend class GLProgram;
 
+        explicit GLShader(GLuint id);
+
     public:
-        explicit GLShader(GLenum type);
-        ~GLShader();
+        GLShader();
+        GLShader(GLShader&&) noexcept;
+        GLShader& operator=(GLShader&&) noexcept;
+        ~GLShader() override;
 
         [[nodiscard]] bool IsValid() const;
-
-        GLint GetParam(GLenum pname) const;
+        [[nodiscard]] GLint GetParam(GLenum pname) const;
 
         template <unsigned N>
         std::array<GLint, N> GetParams(const GLenum pname) const
@@ -66,21 +82,23 @@ namespace DesktopTown
         void SetSource(const std::string& source) const;
         void Compile() const;
 
-    private:
-        GLuint ID;
+        static GLShader Create(GLenum type);
     };
 
-    class GLProgram
+    class GLProgram final : public GLObject
     {
-        friend class GLPipelines;
+        friend class GLPipeline;
+
+        explicit GLProgram(GLuint id);
 
     public:
         GLProgram();
-        ~GLProgram();
+        GLProgram(GLProgram&&) noexcept;
+        GLProgram& operator=(GLProgram&&) noexcept;
+        ~GLProgram() override;
 
         [[nodiscard]] bool IsValid() const;
-
-        GLint GetParam(GLenum pname) const;
+        [[nodiscard]] GLint GetParam(GLenum pname) const;
 
         template <unsigned N>
         std::array<GLint, N> GetParams(const GLenum pname) const
@@ -90,7 +108,7 @@ namespace DesktopTown
             return params;
         }
 
-        GLint GetStageParam(GLenum type, GLenum pname) const;
+        [[nodiscard]] GLint GetStageParam(GLenum type, GLenum pname) const;
 
         template <unsigned N>
         std::array<GLint, N> GetStageParams(const GLenum type, const GLenum pname) const
@@ -101,8 +119,7 @@ namespace DesktopTown
         }
 
         [[nodiscard]] std::string GetInfoLog() const;
-
-        GLint GetInterfaceParam(GLenum interface, GLenum pname) const;
+        [[nodiscard]] GLint GetInterfaceParam(GLenum interface, GLenum pname) const;
 
         template <unsigned N>
         std::array<GLint, N> GetInterfaceParams(const GLenum interface, const GLenum pname) const
@@ -207,100 +224,140 @@ namespace DesktopTown
         void Validate() const;
         void Use() const;
 
-    private:
-        GLuint ID;
+        static GLProgram Create();
     };
 
-    class GLPipelines
+    class GLPipeline final : public GLObject
     {
-    public:
-        explicit GLPipelines(GLsizei n = 1);
-        ~GLPipelines();
+        explicit GLPipeline(GLuint id);
 
-        [[nodiscard]] bool IsValid(unsigned index = 0u) const;
-        GLint GetParam(GLenum pname, unsigned index = 0u) const;
+    public:
+        GLPipeline();
+        GLPipeline(GLPipeline&&) noexcept;
+        GLPipeline& operator=(GLPipeline&&) noexcept;
+        ~GLPipeline() override;
 
         template <unsigned N>
-        std::array<GLint, N> GetParams(const GLenum pname, const unsigned index = 0u) const
+        std::array<GLint, N> GetParams(const GLenum pname) const
         {
             std::array<GLint, N> params;
-            glGetProgramPipelineiv(IDs.at(index), pname, params.data());
+            glGetProgramPipelineiv(ID, pname, params.data());
             return params;
         }
 
-        [[nodiscard]] std::string GetInfoLog(unsigned index = 0u) const;
+        [[nodiscard]] bool IsValid() const;
+        [[nodiscard]] GLint GetParam(GLenum pname) const;
+        [[nodiscard]] std::string GetInfoLog() const;
 
-        void ActiveShaderProgram(const GLProgram& program, unsigned index = 0u) const;
-        void UseProgramStages(GLbitfield stages, const GLProgram& program, unsigned index = 0u) const;
-        void Validate(unsigned index = 0u) const;
-        void Bind(unsigned index = 0u) const;
+        void ActiveShaderProgram(const GLProgram& program) const;
+        void UseProgramStages(GLbitfield stages, const GLProgram& program) const;
+        void Validate() const;
+        void Bind() const;
 
-    private:
-        std::vector<GLuint> IDs;
+        static GLPipeline Create();
     };
 
-    class GLVertexArrays
+    class GLVertexArray final : public GLObject
     {
+        explicit GLVertexArray(GLuint id);
+
     public:
-        static void EnableVertexAttrib(GLuint index);
-        static void DisableVertexAttrib(GLuint index);
-        static void VertexAttribPointer(
-            GLuint index,
-            GLint size,
-            GLenum type,
-            GLboolean normalized,
-            GLsizei stride,
-            const void* pointer);
-        static void VertexAttribPointer(
-            GLuint index,
-            GLint size,
-            GLenum type,
-            GLboolean normalized,
-            GLsizei stride,
-            unsigned offset);
+        GLVertexArray();
+        GLVertexArray(GLVertexArray&&) noexcept;
+        GLVertexArray& operator=(GLVertexArray&&) noexcept;
+        ~GLVertexArray() override;
 
-        explicit GLVertexArrays(GLsizei n = 1);
-        ~GLVertexArrays();
+        void Bind() const;
+        void Stride(GLsizei stride);
 
-        void Bind(unsigned index = 0u) const;
-
-    private:
-        std::vector<GLuint> IDs;
-    };
-
-    class GLBuffers
-    {
-    public:
         template <typename T>
-        static void Data(const GLenum target, const std::vector<T>& data, const GLenum usage)
+        void VertexAttrib(const GLint size, const GLenum type, const GLboolean normalized)
         {
-            glBufferData(target, data.size() * sizeof(T), data.data(), usage);
+            glEnableVertexArrayAttrib(ID, m_Index);
+            glVertexAttribPointer(m_Index, size, type, normalized, m_Stride, reinterpret_cast<const void*>(m_Offset));
+            ++m_Index;
+            m_Offset += size * sizeof(T);
+        }
+
+        static GLVertexArray Create();
+
+    private:
+        GLsizei m_Stride{};
+        GLuint m_Index{};
+        unsigned m_Offset{};
+    };
+
+    class GLBuffer final : public GLObject
+    {
+        explicit GLBuffer(GLuint id);
+
+    public:
+        GLBuffer();
+        GLBuffer(GLBuffer&&) noexcept;
+        GLBuffer& operator=(GLBuffer&&) noexcept;
+        ~GLBuffer() override;
+
+        void Bind(GLenum target);
+
+        template <typename T>
+        void Data(const std::vector<T>& data, const GLenum usage) const
+        {
+            glBufferData(m_Target, data.size() * sizeof(T), data.data(), usage);
         }
 
         template <typename T>
-        static void Data(const GLenum target, const unsigned n, const GLenum usage)
+        void Data(const unsigned n, const GLenum usage) const
         {
-            glBufferData(target, n * sizeof(T), nullptr, usage);
+            glBufferData(m_Target, n * sizeof(T), nullptr, usage);
         }
 
-        explicit GLBuffers(GLsizei n = 1);
-        ~GLBuffers();
+        template <typename T>
+        void SubData(const unsigned offset, const std::vector<T>& data) const
+        {
+            glBufferSubData(m_Target, offset, data.size() * sizeof(T), data.data());
+        }
 
-        void Bind(GLenum target, unsigned index = 0u) const;
+        static GLBuffer Create();
 
     private:
-        std::vector<GLuint> IDs;
+        GLenum m_Target{};
     };
 
-    class GLTextures
+    class GLTexture final : public GLObject
     {
-    public:
-        explicit GLTextures(GLsizei n = 1);
-        ~GLTextures();
+        explicit GLTexture(GLuint id);
 
-        void Bind(GLenum target, GLuint index = 0u) const;
+    public:
+        GLTexture();
+        GLTexture(GLTexture&&) noexcept;
+        GLTexture& operator=(GLTexture&&) noexcept;
+        ~GLTexture() override;
+
+        [[nodiscard]] GLint LevelParam(GLint level, GLenum pname) const;
+
+        void Bind(GLenum target);
+        void Param(GLenum pname, GLint param) const;
+        void Image2D(
+            GLint level,
+            GLint internalformat,
+            GLsizei width,
+            GLsizei height,
+            GLenum format,
+            GLenum type,
+            const void* pixels) const;
+        void SubImage2D(
+            GLint level,
+            GLint xoffset,
+            GLint yoffset,
+            GLsizei width,
+            GLsizei height,
+            GLenum format,
+            GLenum type,
+            const void* pixels) const;
+
+        static GLTexture Create();
 
     private:
-        std::vector<GLuint> IDs;
+        GLenum m_Target{};
     };
 }

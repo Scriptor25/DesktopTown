@@ -25,27 +25,20 @@ namespace DesktopTown
         FontContext();
         ~FontContext();
 
+        void Init(GLProgram&& program, GLVertexArray&& vertex_array, GLBuffer&& vertex_buffer);
+
         void LoadFont(const std::string& filename, FT_UInt width = 0, FT_UInt height = 0, FT_Long index = 0);
-        void DrawText(
-            const GLProgram& program,
-            const GLVertexArrays& vertex_array,
-            const GLBuffers& vertex_buffer,
-            const ::std::wstring& text,
-            float start_x,
-            float start_y,
-            float scale,
-            const glm::vec3& color);
-        void DrawAtlas(
-            const GLProgram& program,
-            const GLVertexArrays& vertex_array,
-            const GLBuffers& vertex_buffer,
-            float start_x,
-            float start_y,
-            const glm::vec3& color) const;
+        void DrawText(const std::wstring& text, float start_x, float start_y, float scale, const glm::vec3& color);
+        void DrawAtlas(float start_x, float start_y, float scale, const glm::vec3& color);
 
     private:
-        FT_Library m_FT;
-        GLTextures m_Atlas;
+        FT_Library m_FT{};
+
         std::map<wchar_t, Character> m_CharMap;
+
+        GLTexture m_Atlas;
+        GLProgram m_Program;
+        GLVertexArray m_VertexArray;
+        GLBuffer m_VertexBuffer;
     };
 }
