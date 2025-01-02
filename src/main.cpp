@@ -3,6 +3,7 @@
 #include <DesktopTown/Context.hpp>
 #include <DesktopTown/FontContext.hpp>
 #include <DesktopTown/GL.hpp>
+#include <DesktopTown/Sprite.hpp>
 #include <GL/glew.h>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -61,33 +62,36 @@ public:
         vertex_array.VertexAttrib<float>(2, GL_FLOAT, GL_FALSE);
         vertex_array.VertexAttrib<float>(2, GL_FLOAT, GL_FALSE);
 
-        fonts.Init(std::move(program), std::move(vertex_array), std::move(vertex_buffer));
+        m_Fonts.Init(std::move(program), std::move(vertex_array), std::move(vertex_buffer));
+
+        m_Sprite.Load("image/town_building_01.png");
     }
 
 protected:
     void OnStart() override
     {
-        fonts.LoadFont("font/Gothic3.ttf", 0, 48);
+        m_Fonts.LoadFont("font/Gothic3.ttf", 0, 48);
     }
 
     void OnUpdate() override
     {
-        fonts.DrawText(
+        m_Fonts.DrawText(
             L"Hello World!",
             0.f,
             48.f,
             1.f,
             {1.f, 1.f, 0.f});
-        fonts.DrawText(
+        m_Fonts.DrawText(
             L"This Ä is Ö some Ü more ß text.",
             0.f,
             0.f,
             .5f,
             {0.f, 1.f, 1.f});
-        fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
+        m_Fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
     }
 
-    DesktopTown::FontContext fonts;
+    DesktopTown::FontContext m_Fonts;
+    DesktopTown::Sprite m_Sprite;
 };
 
 int main()

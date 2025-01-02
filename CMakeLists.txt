@@ -40,3 +40,6 @@ option(GLM_BUILD_INSTALL "" OFF)
 option(GLM_ENABLE_CXX_20 "" ON)
 add_subdirectory(deps/glm)
 target_link_libraries(DesktopTown PRIVATE glm::glm)
+
+add_subdirectory(deps/stb)
+target_link_libraries(DesktopTown PRIVATE stb)

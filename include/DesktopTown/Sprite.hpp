@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <DesktopTown/GL.hpp>
 
 namespace DesktopTown
@@ -13,5 +14,8 @@ namespace DesktopTown
 
     private:
         GLTexture m_Texture;
+
+        float m_FrameHeight{};
+        unsigned m_NumFrames{};
     };
 }
