@@ -17,6 +17,8 @@ static void APIENTRY on_debug(
     const void* /*user_param*/)
 {
     fprintf(stderr, "[OpenGL 0x%08X] %.*s\r\n", id, length, message);
+    fflush(stderr);
+    return;
 }
 
 DesktopTown::Context::Context()
@@ -32,7 +34,7 @@ DesktopTown::Context::Context()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);

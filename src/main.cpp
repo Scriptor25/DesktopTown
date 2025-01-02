@@ -30,19 +30,20 @@ public:
         auto vertex_buffer = DesktopTown::GLBuffer::Create();
 
         {
-            const auto shader = DesktopTown::GLShader::Create(GL_VERTEX_SHADER);
+            auto shader = DesktopTown::GLShader::Create(GL_VERTEX_SHADER);
             const auto source = read_file("shader/text/vertex.glsl");
             shader.SetSource(source);
             shader.Compile();
             program.Attach(shader);
         }
         {
-            const auto shader = DesktopTown::GLShader::Create(GL_FRAGMENT_SHADER);
+            auto shader = DesktopTown::GLShader::Create(GL_FRAGMENT_SHADER);
             const auto source = read_file("shader/text/fragment.glsl");
             shader.SetSource(source);
             shader.Compile();
             program.Attach(shader);
         }
+
         program.Link();
         program.Validate();
 
@@ -51,16 +52,18 @@ public:
         const auto fw = static_cast<float>(width);
         const auto fh = static_cast<float>(height);
         const auto projection = glm::ortho(0.f, fw, 0.f, fh);
-        program.SetUniformMatrix<DesktopTown::UNIFORM_MATRIX_4_4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
+        program.SetUniformMatrix<DesktopTown::Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
         vertex_array.Bind();
+        vertex_array.EnableAttrib(0);
+        vertex_array.EnableAttrib(1);
+
         vertex_buffer.Bind(GL_ARRAY_BUFFER);
+        vertex_buffer.Data<GLfloat>(0, GL_DYNAMIC_DRAW);
 
-        vertex_buffer.Data<GLfloat>(6 * 4, GL_DYNAMIC_DRAW);
-
-        vertex_array.Stride(4 * sizeof(float));
-        vertex_array.VertexAttrib<float>(2, GL_FLOAT, GL_FALSE);
-        vertex_array.VertexAttrib<float>(2, GL_FLOAT, GL_FALSE);
+        constexpr auto STRIDE = 4 * sizeof(GLfloat);
+        vertex_array.AttribPointer(0, 2, GL_FLOAT, GL_FALSE, STRIDE, 0 * sizeof(GLfloat));
+        vertex_array.AttribPointer(1, 2, GL_FLOAT, GL_FALSE, STRIDE, 2 * sizeof(GLfloat));
 
         m_Fonts.Init(std::move(program), std::move(vertex_array), std::move(vertex_buffer));
 

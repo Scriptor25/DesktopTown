@@ -1,41 +1,40 @@
 #include <DesktopTown/GL.hpp>
 
-DesktopTown::GLBuffer::GLBuffer(const GLuint id)
-    : GLObject(id)
+DesktopTown::GLBuffer::GLBuffer(const GLuint name)
+    : GLObject(GL_BUFFER, name)
 {
 }
 
 DesktopTown::GLBuffer::GLBuffer()
-    : GLObject(0)
+    : GLObject(GL_BUFFER, 0)
 {
-}
-
-DesktopTown::GLBuffer::GLBuffer(GLBuffer&& other) noexcept
-    : GLObject(other.ID)
-{
-    other.ID = 0;
-}
-
-DesktopTown::GLBuffer& DesktopTown::GLBuffer::operator=(GLBuffer&& other) noexcept
-{
-    ID = other.ID;
-    other.ID = 0;
-    return *this;
 }
 
 DesktopTown::GLBuffer::~GLBuffer()
 {
-    glDeleteBuffers(1, &ID);
+    glDeleteBuffers(1, &m_Name);
 }
 
-void DesktopTown::GLBuffer::Bind(const GLenum target)
+DesktopTown::GLBuffer::GLBuffer(GLBuffer&& other) noexcept
+    : GLObject(GL_BUFFER, other.m_Name)
 {
-    glBindBuffer(m_Target = target, ID);
+    other.m_Name = 0;
+}
+
+DesktopTown::GLBuffer& DesktopTown::GLBuffer::operator=(GLBuffer&& other) noexcept
+{
+    std::swap(m_Name, other.m_Name);
+    return *this;
+}
+
+void DesktopTown::GLBuffer::Bind(const GLenum target) const
+{
+    glBindBuffer(target, m_Name);
 }
 
 DesktopTown::GLBuffer DesktopTown::GLBuffer::Create()
 {
-    GLuint id;
-    glGenBuffers(1, &id);
-    return GLBuffer(id);
+    GLuint name;
+    glGenBuffers(1, &name);
+    return GLBuffer(name);
 }

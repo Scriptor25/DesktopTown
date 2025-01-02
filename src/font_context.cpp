@@ -1,6 +1,7 @@
 #include <DesktopTown/FontContext.hpp>
 
 DesktopTown::FontContext::FontContext()
+    : m_Atlas(GLTexture::Create())
 {
     FT_Init_FreeType(&m_FT);
 }
@@ -70,22 +71,22 @@ void DesktopTown::FontContext::LoadFont(
         };
     }
 
-    const auto atlas_width = NUM_TILES_RT * max_width;
-    const auto atlas_height = NUM_TILES_RT * max_height;
+    m_Width = NUM_TILES_RT * max_width;
+    m_Height = NUM_TILES_RT * max_height;
 
     m_Atlas.Bind(GL_TEXTURE_2D);
     m_Atlas.Image2D(
+        GL_TEXTURE_2D,
         0,
         GL_RED,
-        static_cast<GLsizei>(atlas_width),
-        static_cast<GLsizei>(atlas_height),
+        static_cast<GLsizei>(m_Width),
+        static_cast<GLsizei>(m_Height),
         GL_RED,
-        GL_UNSIGNED_BYTE,
-        nullptr);
-    m_Atlas.Param(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    m_Atlas.Param(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    m_Atlas.Param(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    m_Atlas.Param(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GL_UNSIGNED_BYTE, nullptr);
+    m_Atlas.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    m_Atlas.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    m_Atlas.SetParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    m_Atlas.SetParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (int c = MIN_CHAR; c < MAX_CHAR; ++c)
@@ -121,17 +122,23 @@ void DesktopTown::FontContext::DrawText(
     const glm::vec3& color)
 {
     m_Program.Use();
-    m_Program.SetUniform<UNIFORM_FLOAT_3>("COLOR", color.x, color.y, color.z);
+    m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
 
     glActiveTexture(GL_TEXTURE0);
     m_Atlas.Bind(GL_TEXTURE_2D);
-
     m_VertexArray.Bind();
     m_VertexBuffer.Bind(GL_ARRAY_BUFFER);
 
+    constexpr auto VERTEX_SIZE = 4 * sizeof(GLfloat);
+    constexpr auto VERTICES_PER_CHAR = 6;
+
+    const auto vertex_count = text.size() * VERTICES_PER_CHAR;
+    m_VertexBuffer.Data<GLfloat>(vertex_count * VERTEX_SIZE, GL_DYNAMIC_DRAW);
+
     auto x = start_x;
-    for (auto& c : text)
+    for (unsigned i = 0; i < text.size(); ++i)
     {
+        auto& c = text[i];
         auto& [
             texture_,
             size_,
@@ -156,11 +163,11 @@ void DesktopTown::FontContext::DrawText(
             xpos + w, ypos + h, texture_.z, texture_.y
         };
 
-        m_VertexBuffer.SubData(0, vertices);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
+        m_VertexBuffer.SubData(i * VERTICES_PER_CHAR * VERTEX_SIZE, vertices);
         x += static_cast<float>(advance_ >> 6) * scale;
     }
+
+    glDrawArrays(GL_TRIANGLES, 0, vertex_count);
 }
 
 void DesktopTown::FontContext::DrawAtlas(
@@ -170,16 +177,13 @@ void DesktopTown::FontContext::DrawAtlas(
     const glm::vec3& color)
 {
     m_Program.Use();
-    m_Program.SetUniform<UNIFORM_FLOAT_3>("COLOR", color.x, color.y, color.z);
+    m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
 
     glActiveTexture(GL_TEXTURE0);
     m_Atlas.Bind(GL_TEXTURE_2D);
 
-    const auto width = m_Atlas.LevelParam(0, GL_TEXTURE_WIDTH);
-    const auto height = m_Atlas.LevelParam(0, GL_TEXTURE_HEIGHT);
-
-    const auto fw = static_cast<float>(width) * scale;
-    const auto fh = static_cast<float>(height) * scale;
+    const auto fw = static_cast<float>(m_Width) * scale;
+    const auto fh = static_cast<float>(m_Height) * scale;
 
     const std::vector vertices
     {
@@ -194,6 +198,6 @@ void DesktopTown::FontContext::DrawAtlas(
 
     m_VertexArray.Bind();
     m_VertexBuffer.Bind(GL_ARRAY_BUFFER);
-    m_VertexBuffer.SubData(0, vertices);
+    m_VertexBuffer.Data(vertices, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
