@@ -1,79 +1,23 @@
-#include <fstream>
 #include <string>
 #include <DesktopTown/Context.hpp>
 #include <DesktopTown/FontContext.hpp>
-#include <DesktopTown/GL.hpp>
 #include <DesktopTown/Sprite.hpp>
-#include <GL/glew.h>
 #include <glm/ext.hpp>
-#include <glm/glm.hpp>
-
-static std::string read_file(const std::string& filename)
-{
-    std::ifstream stream(filename, std::ios_base::in | std::ios_base::ate);
-    std::string data(stream.tellg(), 0);
-    stream.seekg(0, std::ios::beg);
-    stream.read(data.data(), static_cast<std::streamsize>(data.size()));
-    return std::move(data);
-}
 
 class App final : public DesktopTown::Context
 {
 public:
-    App()
-    {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        auto program = DesktopTown::GLProgram::Create();
-        auto vertex_array = DesktopTown::GLVertexArray::Create();
-        auto vertex_buffer = DesktopTown::GLBuffer::Create();
-
-        {
-            auto shader = DesktopTown::GLShader::Create(GL_VERTEX_SHADER);
-            const auto source = read_file("shader/text/vertex.glsl");
-            shader.SetSource(source);
-            shader.Compile();
-            program.Attach(shader);
-        }
-        {
-            auto shader = DesktopTown::GLShader::Create(GL_FRAGMENT_SHADER);
-            const auto source = read_file("shader/text/fragment.glsl");
-            shader.SetSource(source);
-            shader.Compile();
-            program.Attach(shader);
-        }
-
-        program.Link();
-        program.Validate();
-
-        int width, height;
-        GetSize(width, height);
-        const auto fw = static_cast<float>(width);
-        const auto fh = static_cast<float>(height);
-        const auto projection = glm::ortho(0.f, fw, 0.f, fh);
-        program.SetUniformMatrix<DesktopTown::Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
-
-        vertex_array.Bind();
-        vertex_array.EnableAttrib(0);
-        vertex_array.EnableAttrib(1);
-
-        vertex_buffer.Bind(GL_ARRAY_BUFFER);
-        vertex_buffer.Data<GLfloat>(0, GL_DYNAMIC_DRAW);
-
-        constexpr auto STRIDE = 4 * sizeof(GLfloat);
-        vertex_array.AttribPointer(0, 2, GL_FLOAT, GL_FALSE, STRIDE, 0 * sizeof(GLfloat));
-        vertex_array.AttribPointer(1, 2, GL_FLOAT, GL_FALSE, STRIDE, 2 * sizeof(GLfloat));
-
-        m_Fonts.Init(std::move(program), std::move(vertex_array), std::move(vertex_buffer));
-
-        m_Sprite.Load("image/town_building_01.png");
-    }
+    App() = default;
 
 protected:
     void OnStart() override
     {
+        int width, height;
+        GetSize(width, height);
+        m_Fonts.Init(width, height);
         m_Fonts.LoadFont("font/Gothic3.ttf", 0, 48);
+
+        m_Sprite.Load("image/town_building_01.png");
     }
 
     void OnUpdate() override
@@ -93,6 +37,7 @@ protected:
         m_Fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
     }
 
+private:
     DesktopTown::FontContext m_Fonts;
     DesktopTown::Sprite m_Sprite;
 };

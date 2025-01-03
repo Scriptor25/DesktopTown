@@ -22,7 +22,12 @@ namespace DesktopTown
         FontContext();
         ~FontContext();
 
-        void Init(GLProgram&& program, GLVertexArray&& vertex_array, GLBuffer&& vertex_buffer);
+        FontContext(const FontContext&) = delete;
+        FontContext& operator=(const FontContext&) = delete;
+        FontContext(FontContext&& other) noexcept;
+        FontContext& operator=(FontContext&& other) noexcept;
+
+        void Init(int window_width, int window_height);
 
         void LoadFont(const std::string& filename, FT_UInt width = 0, FT_UInt height = 0, FT_Long index = 0);
         void DrawText(const std::wstring& text, float start_x, float start_y, float scale, const glm::vec3& color);
@@ -33,10 +38,11 @@ namespace DesktopTown
 
         std::map<wchar_t, Character> m_CharMap;
 
-        unsigned m_Width{}, m_Height{};
+        GLsizei m_Width{}, m_Height{};
         GLTexture m_Atlas;
         GLProgram m_Program;
         GLVertexArray m_VertexArray;
         GLBuffer m_VertexBuffer;
+        GLBuffer m_IndexBuffer;
     };
 }

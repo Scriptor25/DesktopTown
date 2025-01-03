@@ -2,11 +2,6 @@
 #include <DesktopTown/DesktopTown.hpp>
 #include <DesktopTown/Sprite.hpp>
 
-DesktopTown::Sprite::Sprite()
-    : m_Texture(GLTexture::Create())
-{
-}
-
 void DesktopTown::Sprite::Load(const std::string& filename)
 {
     int width, height;
@@ -14,12 +9,19 @@ void DesktopTown::Sprite::Load(const std::string& filename)
 
     if (!pixels)
     {
-        Error("[Sprite::Load] failed to load image file '{}': {}", filename, stbi_failure_reason());
+        Error(
+            GL_DEBUG_TYPE_ERROR,
+            0x0002,
+            GL_DEBUG_SEVERITY_HIGH,
+            "Failed to load image from file '{}': {}",
+            filename,
+            stbi_failure_reason());
         return;
     }
 
-    m_Texture.Bind(GL_TEXTURE_2D);
-    m_Texture.Image2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    m_Texture = GLTexture::Create(GL_TEXTURE_2D);
+    m_Texture.Storage(1, GL_RGBA32F, width, height);
+    m_Texture.SubImage(0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     stbi_image_free(pixels);
 

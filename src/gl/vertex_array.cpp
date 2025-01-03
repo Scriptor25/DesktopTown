@@ -32,25 +32,38 @@ void DesktopTown::GLVertexArray::Bind() const
     glBindVertexArray(m_Name);
 }
 
+void DesktopTown::GLVertexArray::VertexBuffer(
+    const GLuint binding_index,
+    const GLBuffer& buffer,
+    const GLintptr offset,
+    const GLsizei stride) const
+{
+    glVertexArrayVertexBuffer(m_Name, binding_index, buffer.GetName(), offset, stride);
+}
+
 void DesktopTown::GLVertexArray::EnableAttrib(const GLuint index) const
 {
     glEnableVertexArrayAttrib(m_Name, index);
 }
 
-void DesktopTown::GLVertexArray::AttribPointer(
-    const GLuint index,
+void DesktopTown::GLVertexArray::AttribFormat(
+    const GLuint attrib_index,
     const GLint size,
     const GLenum type,
     const GLboolean normalized,
-    const GLsizei stride,
-    const unsigned offset) const
+    const GLuint offset) const
 {
-    glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast<const void*>(offset));
+    glVertexArrayAttribFormat(m_Name, attrib_index, size, type, normalized, offset);
+}
+
+void DesktopTown::GLVertexArray::AttribBinding(const GLuint attrib_index, const GLuint binding_index) const
+{
+    glVertexArrayAttribBinding(m_Name, attrib_index, binding_index);
 }
 
 DesktopTown::GLVertexArray DesktopTown::GLVertexArray::Create()
 {
     GLuint name;
-    glGenVertexArrays(1, &name);
+    glCreateVertexArrays(1, &name);
     return GLVertexArray(name);
 }

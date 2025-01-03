@@ -8,8 +8,6 @@ namespace DesktopTown
     class Sprite
     {
     public:
-        Sprite();
-
         void Load(const std::string& filename);
 
     private:

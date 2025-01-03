@@ -80,7 +80,7 @@ void DesktopTown::Context::Start()
         glfwPollEvents();
 
         int width, height;
-        glfwGetFramebufferSize(m_Window, &width, &height);
+        GetSize(width, height);
 
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

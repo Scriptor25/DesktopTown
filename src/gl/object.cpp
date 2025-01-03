@@ -19,3 +19,14 @@ void DesktopTown::GLObject::RemoveLabel() const
 {
     glObjectLabel(m_Type, m_Name, 0, nullptr);
 }
+
+std::string DesktopTown::GLObject::GetLabel() const
+{
+    GLsizei length;
+    glGetObjectLabel(m_Type, m_Name, 0, &length, nullptr);
+
+    std::string label(length, 0);
+    glGetObjectLabel(m_Type, m_Name, length, &length, label.data());
+
+    return label;
+}

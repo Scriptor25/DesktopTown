@@ -32,9 +32,33 @@ void DesktopTown::GLBuffer::Bind(const GLenum target) const
     glBindBuffer(target, m_Name);
 }
 
+void DesktopTown::GLBuffer::CopySubData(
+    const GLBuffer& write_buffer,
+    const GLintptr read_offset,
+    const GLintptr write_offset,
+    const GLsizeiptr size) const
+{
+    glCopyNamedBufferSubData(m_Name, write_buffer.GetName(), read_offset, write_offset, size);
+}
+
+void* DesktopTown::GLBuffer::Map(const GLbitfield access) const
+{
+    return glMapNamedBuffer(m_Name, access);
+}
+
+void* DesktopTown::GLBuffer::MapRange(const GLintptr offset, const GLsizeiptr length, const GLbitfield access) const
+{
+    return glMapNamedBufferRange(m_Name, offset, length, access);
+}
+
+bool DesktopTown::GLBuffer::Unmap() const
+{
+    return glUnmapNamedBuffer(m_Name);
+}
+
 DesktopTown::GLBuffer DesktopTown::GLBuffer::Create()
 {
     GLuint name;
-    glGenBuffers(1, &name);
+    glCreateBuffers(1, &name);
     return GLBuffer(name);
 }

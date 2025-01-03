@@ -1,10 +1,8 @@
 #pragma once
 
 #include <map>
-#include <string>
 #include <vector>
 #include <DesktopTown/DesktopTown.hpp>
-#include <GL/glew.h>
 
 namespace DesktopTown
 {
@@ -33,6 +31,12 @@ namespace DesktopTown
         Uniform_Matrix4x4,
     };
 
+    struct GLBinary
+    {
+        GLenum Format;
+        std::vector<char> Data;
+    };
+
     class GLObject
     {
     protected:
@@ -43,14 +47,19 @@ namespace DesktopTown
         GLuint m_Name;
 
     public:
-        GLuint GetName() const;
+        [[nodiscard]] GLuint GetName() const;
 
         virtual void SetLabel(const std::string& label) const;
         virtual void RemoveLabel() const;
+        virtual std::string GetLabel() const;
     };
 
     class GLBuffer;
+    class GLFramebuffer;
+    class GLPipeline;
     class GLProgram;
+    class GLQuery;
+    class GLRenderbuffer;
     class GLShader;
     class GLTexture;
     class GLVertexArray;
@@ -85,15 +94,96 @@ namespace DesktopTown
         template <typename T>
         void SubData(const GLintptr offset, const std::vector<T>& data) const
         {
-            glNamedBufferSubData(m_Name, offset, data.size() * sizeof(T), data.data());
+            glNamedBufferSubData(m_Name, offset * sizeof(T), data.size() * sizeof(T), data.data());
         }
 
+        template <typename T>
+        void ClearData(const GLenum internalformat, const GLenum format, const GLenum type, const T& data) const
+        {
+            glClearNamedBufferData(m_Name, internalformat, format, type, &data);
+        }
+
+        template <typename T>
+        void ClearSubData(
+            const GLenum internalformat,
+            const GLintptr offset,
+            const GLsizeiptr size,
+            const GLenum format,
+            const GLenum type,
+            const T& data) const
+        {
+            glClearNamedBufferSubData(
+                m_Name,
+                internalformat,
+                offset * sizeof(T),
+                size * sizeof(T),
+                format,
+                type,
+                &data);
+        }
+
+        void CopySubData(
+            const GLBuffer& write_buffer,
+            GLintptr read_offset,
+            GLintptr write_offset,
+            GLsizeiptr size) const;
+
+        template <typename T>
+        void Storage(const GLsizeiptr count, const GLbitfield flags) const
+        {
+            glNamedBufferStorage(m_Name, count * sizeof(T), nullptr, flags);
+        }
+
+        template <typename T>
+        void Storage(const std::vector<T>& data, const GLbitfield flags) const
+        {
+            glNamedBufferStorage(m_Name, data.size() * sizeof(T), data.data(), flags);
+        }
+
+        [[nodiscard]] void* Map(GLbitfield access) const;
+        [[nodiscard]] void* MapRange(GLintptr offset, GLsizeiptr length, GLbitfield access) const;
+        [[nodiscard]] bool Unmap() const;
+
         static GLBuffer Create();
+    };
+
+    class GLFramebuffer final : public GLObject
+    {
+        explicit GLFramebuffer(GLuint name);
+
+    public:
+        GLFramebuffer();
+        ~GLFramebuffer() override;
+
+        GLFramebuffer(const GLFramebuffer&) = delete;
+        GLFramebuffer& operator=(const GLFramebuffer&) = delete;
+        GLFramebuffer(GLFramebuffer&& other) noexcept;
+        GLFramebuffer& operator=(GLFramebuffer&& other) noexcept;
+
+        static GLFramebuffer Create();
+    };
+
+    class GLPipeline final : public GLObject
+    {
+        explicit GLPipeline(GLuint name);
+
+    public:
+        GLPipeline();
+        ~GLPipeline() override;
+
+        GLPipeline(const GLPipeline&) = delete;
+        GLPipeline& operator=(const GLPipeline&) = delete;
+        GLPipeline(GLPipeline&& other) noexcept;
+        GLPipeline& operator=(GLPipeline&& other) noexcept;
+
+        static GLPipeline Create();
     };
 
     class GLProgram final : public GLObject
     {
         explicit GLProgram(GLuint name);
+
+        std::map<std::string, GLint> m_Locations;
 
     public:
         GLProgram();
@@ -104,11 +194,23 @@ namespace DesktopTown
         GLProgram(GLProgram&& other) noexcept;
         GLProgram& operator=(GLProgram&& other) noexcept;
 
+        GLint Get(GLenum pname) const;
+        std::string GetInfoLog() const;
         void Attach(const GLShader& shader) const;
         void Detach(const GLShader& shader) const;
-        void Link() const;
-        void Use() const;
+        void Link();
+        bool LinkAndCheck();
         void Validate() const;
+        bool ValidateAndCheck() const;
+        void Use() const;
+        void BindAttribLocation(GLuint index, const std::string& name) const;
+        void BindFragDataLocation(GLuint color_number, const std::string& name) const;
+        GLint GetUniformLocation(const std::string& name);
+        std::vector<GLuint> GetAttachedShaders() const;
+        void DetachAll() const;
+        GLBinary GetBinary() const;
+        void SetBinary(const GLBinary& binary) const;
+        bool SetBinaryAndCheck(const GLBinary& binary) const;
 
         template <GLUniform U, typename... T>
         void SetUniform(const std::string& name, T... values)
@@ -129,12 +231,9 @@ namespace DesktopTown
                 {Uniform_UInt4, reinterpret_cast<void*>(glProgramUniform4ui)},
             };
 
-            const auto location = glGetUniformLocation(m_Name, name.c_str());
+            const auto location = GetUniformLocation(name);
             if (location < 0)
-            {
-                Error("no uniform with name '{}' in program", name);
                 return;
-            }
 
             const auto pfn = PFNS.at(U);
             const auto fn = reinterpret_cast<
@@ -163,12 +262,9 @@ namespace DesktopTown
                 {Uniform_Matrix4x4, reinterpret_cast<void*>(glProgramUniformMatrix4fv)},
             };
 
-            const auto location = glGetUniformLocation(m_Name, name.c_str());
+            const auto location = GetUniformLocation(name);
             if (location < 0)
-            {
-                Error("no uniform with name '{}' in program", name);
                 return;
-            }
 
             const auto pfn = PFNS.at(U);
             const auto fn = reinterpret_cast<
@@ -186,6 +282,43 @@ namespace DesktopTown
         static GLProgram Create();
     };
 
+    class GLQuery final : public GLObject
+    {
+        explicit GLQuery(GLuint name);
+
+        GLenum m_Target{};
+
+    public:
+        GLQuery();
+        ~GLQuery() override;
+
+        GLQuery(const GLQuery&) = delete;
+        GLQuery& operator=(const GLQuery&) = delete;
+        GLQuery(GLQuery&& other) noexcept;
+        GLQuery& operator=(GLQuery&& other) noexcept;
+
+        void Begin(GLenum target);
+        void End();
+
+        static GLQuery Create();
+    };
+
+    class GLRenderbuffer final : public GLObject
+    {
+        explicit GLRenderbuffer(GLuint name);
+
+    public:
+        GLRenderbuffer();
+        ~GLRenderbuffer() override;
+
+        GLRenderbuffer(const GLRenderbuffer&) = delete;
+        GLRenderbuffer& operator=(const GLRenderbuffer&) = delete;
+        GLRenderbuffer(GLRenderbuffer&& other) noexcept;
+        GLRenderbuffer& operator=(GLRenderbuffer&& other) noexcept;
+
+        static GLRenderbuffer Create();
+    };
+
     class GLShader final : public GLObject
     {
         explicit GLShader(GLuint name);
@@ -199,8 +332,13 @@ namespace DesktopTown
         GLShader(GLShader&& other) noexcept;
         GLShader& operator=(GLShader&& other) noexcept;
 
+        GLint Get(GLenum pname) const;
+        std::string GetInfoLog() const;
+
         void SetSource(const std::string& string) const;
         void Compile() const;
+
+        bool CompileAndCheck() const;
 
         static GLShader Create(GLenum stage);
     };
@@ -219,17 +357,19 @@ namespace DesktopTown
         GLTexture& operator=(GLTexture&& other) noexcept;
 
         void Bind(GLenum target) const;
+        void BindUnit(GLuint unit) const;
         void SetParameter(GLenum pname, GLint param) const;
-        void Image2D(
-            GLenum target,
+        void Storage(GLsizei levels, GLenum internalformat, GLsizei width) const;
+        void Storage(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height) const;
+        void Storage(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) const;
+        void SubImage(
             GLint level,
-            GLint internalformat,
+            GLint xoffset,
             GLsizei width,
-            GLsizei height,
             GLenum format,
             GLenum type,
             const void* pixels) const;
-        void SubImage2D(
+        void SubImage(
             GLint level,
             GLint xoffset,
             GLint yoffset,
@@ -238,8 +378,26 @@ namespace DesktopTown
             GLenum format,
             GLenum type,
             const void* pixels) const;
+        void SubImage(
+            GLint level,
+            GLint xoffset,
+            GLint yoffset,
+            GLint zoffset,
+            GLsizei width,
+            GLsizei height,
+            GLsizei depth,
+            GLenum format,
+            GLenum type,
+            const void* pixels) const;
+        GLTexture View(
+            GLenum target,
+            GLenum internalformat,
+            GLuint min_level,
+            GLuint num_levels,
+            GLuint min_layer,
+            GLuint num_layers) const;
 
-        static GLTexture Create();
+        static GLTexture Create(GLenum target);
     };
 
     class GLVertexArray final : public GLObject
@@ -256,14 +414,10 @@ namespace DesktopTown
         GLVertexArray& operator=(GLVertexArray&& other) noexcept;
 
         void Bind() const;
+        void VertexBuffer(GLuint binding_index, const GLBuffer& buffer, GLintptr offset, GLsizei stride) const;
         void EnableAttrib(GLuint index) const;
-        void AttribPointer(
-            GLuint index,
-            GLint size,
-            GLenum type,
-            GLboolean normalized,
-            GLsizei stride,
-            unsigned offset) const;
+        void AttribFormat(GLuint attrib_index, GLint size, GLenum type, GLboolean normalized, GLuint offset) const;
+        void AttribBinding(GLuint attrib_index, GLuint binding_index) const;
 
         static GLVertexArray Create();
     };

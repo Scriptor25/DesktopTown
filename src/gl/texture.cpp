@@ -32,24 +32,52 @@ void DesktopTown::GLTexture::Bind(const GLenum target) const
     glBindTexture(target, m_Name);
 }
 
+void DesktopTown::GLTexture::BindUnit(const GLuint unit) const
+{
+    glBindTextureUnit(unit, m_Name);
+}
+
 void DesktopTown::GLTexture::SetParameter(const GLenum pname, const GLint param) const
 {
     glTextureParameteri(m_Name, pname, param);
 }
 
-void DesktopTown::GLTexture::Image2D(
-    const GLenum target,
-    const GLint level,
-    const GLint internalformat,
-    const GLsizei width,
-    const GLsizei height,
-    const GLenum format,
-    const GLenum type, const void* pixels) const
+void DesktopTown::GLTexture::Storage(const GLsizei levels, const GLenum internalformat, const GLsizei width) const
 {
-    glTexImage2D(target, level, internalformat, width, height, 0, format, type, pixels);
+    glTextureStorage1D(m_Name, levels, internalformat, width);
 }
 
-void DesktopTown::GLTexture::SubImage2D(
+void DesktopTown::GLTexture::Storage(
+    const GLsizei levels,
+    const GLenum internalformat,
+    const GLsizei width,
+    const GLsizei height) const
+{
+    glTextureStorage2D(m_Name, levels, internalformat, width, height);
+}
+
+void DesktopTown::GLTexture::Storage(
+    const GLsizei levels,
+    const GLenum internalformat,
+    const GLsizei width,
+    const GLsizei height,
+    const GLsizei depth) const
+{
+    glTextureStorage3D(m_Name, levels, internalformat, width, height, depth);
+}
+
+void DesktopTown::GLTexture::SubImage(
+    const GLint level,
+    const GLint xoffset,
+    const GLsizei width,
+    const GLenum format,
+    const GLenum type,
+    const void* pixels) const
+{
+    glTextureSubImage1D(m_Name, level, xoffset, width, format, type, pixels);
+}
+
+void DesktopTown::GLTexture::SubImage(
     const GLint level,
     const GLint xoffset,
     const GLint yoffset,
@@ -62,9 +90,40 @@ void DesktopTown::GLTexture::SubImage2D(
     glTextureSubImage2D(m_Name, level, xoffset, yoffset, width, height, format, type, pixels);
 }
 
-DesktopTown::GLTexture DesktopTown::GLTexture::Create()
+void DesktopTown::GLTexture::SubImage(
+    const GLint level,
+    const GLint xoffset,
+    const GLint yoffset,
+    const GLint zoffset,
+    const GLsizei width,
+    const GLsizei height,
+    const GLsizei depth,
+    const GLenum format,
+    const GLenum type,
+    const void* pixels) const
+{
+    glTextureSubImage3D(m_Name, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
+}
+
+DesktopTown::GLTexture DesktopTown::GLTexture::View(
+    const GLenum target,
+    const GLenum internalformat,
+    const GLuint min_level,
+    const GLuint num_levels,
+    const GLuint min_layer,
+    const GLuint num_layers) const
+{
+    GLuint dest;
+    glGenTextures(1, &dest);
+
+    glTextureView(dest, target, m_Name, internalformat, min_level, num_levels, min_layer, num_layers);
+
+    return GLTexture(dest);
+}
+
+DesktopTown::GLTexture DesktopTown::GLTexture::Create(const GLenum target)
 {
     GLuint name;
-    glGenTextures(1, &name);
+    glCreateTextures(target, 1, &name);
     return GLTexture(name);
 }
