@@ -1,4 +1,5 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/Error.hpp>
+#include <DesktopTown/GL/GLShader.hpp>
 
 DesktopTown::GLShader::GLShader(const GLuint name)
     : GLObject(GL_SHADER, name)

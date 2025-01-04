@@ -1,4 +1,4 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLQuery.hpp>
 
 DesktopTown::GLQuery::GLQuery(const GLuint name)
     : GLObject(GL_QUERY, name)
@@ -27,15 +27,11 @@ DesktopTown::GLQuery& DesktopTown::GLQuery::operator=(GLQuery&& other) noexcept
     return *this;
 }
 
-void DesktopTown::GLQuery::Begin(const GLenum target)
+void DesktopTown::GLQuery::Measure(const GLenum target, const std::function<void()>& callback) const
 {
-    glBeginQuery(m_Target = target, m_Name);
-}
-
-void DesktopTown::GLQuery::End()
-{
-    glEndQuery(m_Target);
-    m_Target = 0;
+    glBeginQuery(target, m_Name);
+    callback();
+    glEndQuery(target);
 }
 
 DesktopTown::GLQuery DesktopTown::GLQuery::Create()

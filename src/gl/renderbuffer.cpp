@@ -1,4 +1,4 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLRenderbuffer.hpp>
 
 DesktopTown::GLRenderbuffer::GLRenderbuffer(const GLuint name)
     : GLObject(GL_RENDERBUFFER, name)

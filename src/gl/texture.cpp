@@ -1,4 +1,4 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLTexture.hpp>
 
 DesktopTown::GLTexture::GLTexture(const GLuint name)
     : GLObject(GL_TEXTURE, name)
@@ -27,9 +27,13 @@ DesktopTown::GLTexture& DesktopTown::GLTexture::operator=(GLTexture&& other) noe
     return *this;
 }
 
-void DesktopTown::GLTexture::Bind(const GLenum target) const
+DesktopTown::GLDefer DesktopTown::GLTexture::Bind(const GLenum target) const
 {
     glBindTexture(target, m_Name);
+    return GLDefer([target]
+    {
+        glBindTexture(target, 0);
+    });
 }
 
 void DesktopTown::GLTexture::BindUnit(const GLuint unit) const

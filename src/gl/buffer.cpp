@@ -1,4 +1,4 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLBuffer.hpp>
 
 DesktopTown::GLBuffer::GLBuffer(const GLuint name)
     : GLObject(GL_BUFFER, name)
@@ -27,20 +27,6 @@ DesktopTown::GLBuffer& DesktopTown::GLBuffer::operator=(GLBuffer&& other) noexce
     return *this;
 }
 
-void DesktopTown::GLBuffer::Bind(const GLenum target) const
-{
-    glBindBuffer(target, m_Name);
-}
-
-void DesktopTown::GLBuffer::CopySubData(
-    const GLBuffer& write_buffer,
-    const GLintptr read_offset,
-    const GLintptr write_offset,
-    const GLsizeiptr size) const
-{
-    glCopyNamedBufferSubData(m_Name, write_buffer.GetName(), read_offset, write_offset, size);
-}
-
 void* DesktopTown::GLBuffer::Map(const GLbitfield access) const
 {
     return glMapNamedBuffer(m_Name, access);
@@ -54,6 +40,24 @@ void* DesktopTown::GLBuffer::MapRange(const GLintptr offset, const GLsizeiptr le
 bool DesktopTown::GLBuffer::Unmap() const
 {
     return glUnmapNamedBuffer(m_Name);
+}
+
+DesktopTown::GLDefer DesktopTown::GLBuffer::Bind(const GLenum target) const
+{
+    glBindBuffer(target, m_Name);
+    return GLDefer([target]
+    {
+        glBindBuffer(target, 0);
+    });
+}
+
+void DesktopTown::GLBuffer::Copy(
+    const GLBuffer& write_buffer,
+    const GLintptr read_offset,
+    const GLintptr write_offset,
+    const GLsizeiptr size) const
+{
+    glCopyNamedBufferSubData(m_Name, write_buffer.GetName(), read_offset, write_offset, size);
 }
 
 DesktopTown::GLBuffer DesktopTown::GLBuffer::Create()

@@ -1,4 +1,6 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/Error.hpp>
+#include <DesktopTown/GL/GLProgram.hpp>
+#include <DesktopTown/GL/GLShader.hpp>
 
 DesktopTown::GLProgram::GLProgram(const GLuint name)
     : GLObject(GL_PROGRAM, name)
@@ -104,9 +106,13 @@ bool DesktopTown::GLProgram::ValidateAndCheck() const
     return false;
 }
 
-void DesktopTown::GLProgram::Use() const
+DesktopTown::GLDefer DesktopTown::GLProgram::Bind() const
 {
     glUseProgram(m_Name);
+    return GLDefer([]
+    {
+        glUseProgram(0);
+    });
 }
 
 void DesktopTown::GLProgram::BindAttribLocation(const GLuint index, const std::string& name) const
@@ -165,7 +171,12 @@ DesktopTown::GLBinary DesktopTown::GLProgram::GetBinary() const
 
 void DesktopTown::GLProgram::SetBinary(const GLBinary& binary) const
 {
-    glProgramBinary(m_Name, binary.Format, binary.Data.data(), binary.Data.size());
+    glProgramBinary(m_Name, binary.Format, binary.Data.data(), static_cast<GLsizei>(binary.Data.size()));
+}
+
+void DesktopTown::GLProgram::SetSeparable(const bool separable) const
+{
+    glProgramParameteri(m_Name, GL_PROGRAM_SEPARABLE, separable);
 }
 
 bool DesktopTown::GLProgram::SetBinaryAndCheck(const GLBinary& binary) const

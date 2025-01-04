@@ -1,4 +1,5 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLPipeline.hpp>
+#include <DesktopTown/GL/GLProgram.hpp>
 
 DesktopTown::GLPipeline::GLPipeline(const GLuint name)
     : GLObject(GL_PROGRAM_PIPELINE, name)
@@ -25,6 +26,25 @@ DesktopTown::GLPipeline& DesktopTown::GLPipeline::operator=(GLPipeline&& other) 
 {
     std::swap(m_Name, other.m_Name);
     return *this;
+}
+
+DesktopTown::GLDefer DesktopTown::GLPipeline::Bind() const
+{
+    glBindProgramPipeline(m_Name);
+    return GLDefer([]
+    {
+        glBindProgramPipeline(0);
+    });
+}
+
+void DesktopTown::GLPipeline::UseStages(const GLbitfield stages, const GLProgram& program) const
+{
+    glUseProgramStages(m_Name, stages, program.GetName());
+}
+
+void DesktopTown::GLPipeline::Validate() const
+{
+    glValidateProgramPipeline(m_Name);
 }
 
 DesktopTown::GLPipeline DesktopTown::GLPipeline::Create()

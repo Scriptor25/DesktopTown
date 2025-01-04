@@ -1,4 +1,4 @@
-#include <DesktopTown/DesktopTown.hpp>
+#include <DesktopTown/WindowUtil.hpp>
 
 #if defined(_WIN32) || defined(__WIN32) || defined(__WIN32__)
 

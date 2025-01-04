@@ -1,5 +1,5 @@
 #include <fstream>
-#include <DesktopTown/DesktopTown.hpp>
+#include <DesktopTown/FileUtil.hpp>
 
 std::vector<char> DesktopTown::ReadFile(const std::string& filename, const std::ios::openmode mode)
 {
@@ -7,9 +7,10 @@ std::vector<char> DesktopTown::ReadFile(const std::string& filename, const std::
     if (!stream.is_open())
         return {};
 
-    std::vector<char> buffer(stream.tellg());
+    const auto count = stream.tellg();
+    std::vector<char> buffer(count);
     stream.seekg(0, std::ios::beg);
-    stream.read(buffer.data(), buffer.size());
+    stream.read(buffer.data(), count);
     stream.close();
 
     return buffer;
@@ -21,12 +22,12 @@ void DesktopTown::WriteFile(const std::string& filename, const std::vector<char>
     if (!stream.is_open())
         return;
 
-    stream.write(data.data(), data.size());
+    stream.write(data.data(), static_cast<std::streamsize>(data.size()));
     stream.close();
 }
 
 std::string DesktopTown::ReadFileText(const std::string& filename, std::ios::openmode mode)
 {
     const auto data = ReadFile(filename, mode);
-    return std::string(data.begin(), data.end());
+    return {data.begin(), data.end()};
 }

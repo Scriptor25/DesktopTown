@@ -1,6 +1,27 @@
 #include <stb_image.h>
-#include <DesktopTown/DesktopTown.hpp>
+#include <DesktopTown/Error.hpp>
 #include <DesktopTown/Sprite.hpp>
+
+DesktopTown::Sprite::Sprite()
+    : m_Program(GLProgram::Create())
+{
+    const std::vector<Vertex> vertices
+    {
+        {{0, 0}, {0, 0}},
+        {{0, 1}, {0, 1}},
+        {{1, 1}, {1, 1}},
+        {{1, 0}, {1, 0}},
+    };
+
+    const std::vector indices
+    {
+        0u, 1u, 2u,
+        2u, 3u, 0u,
+    };
+
+    m_Mesh.SetVertices(vertices);
+    m_Mesh.SetIndices(indices);
+}
 
 void DesktopTown::Sprite::Load(const std::string& filename)
 {
@@ -35,4 +56,8 @@ void DesktopTown::Sprite::Load(const std::string& filename)
         m_FrameHeight = static_cast<float>(width) / static_cast<float>(height);
         m_NumFrames = height / width;
     }
+}
+
+void DesktopTown::Sprite::Draw(unsigned frame, float x, float y, float s)
+{
 }

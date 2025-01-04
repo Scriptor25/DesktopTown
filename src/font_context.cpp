@@ -1,13 +1,14 @@
 #include <filesystem>
+#include <ranges>
+#include <span>
+#include <DesktopTown/FileUtil.hpp>
 #include <DesktopTown/FontContext.hpp>
+#include <DesktopTown/GL/GLQuery.hpp>
+#include <DesktopTown/GL/GLShader.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
-struct Vertex
-{
-    glm::vec2 Position;
-    glm::vec2 Texture;
-};
+#include "DesktopTown/VecView.hpp"
 
 DesktopTown::FontContext::FontContext()
 {
@@ -26,75 +27,49 @@ constexpr auto CHAR_RANGE = MAX_CHAR - MIN_CHAR + 1;
 constexpr auto NUM_TILES_RT = static_cast<int>(ceil(sqrt(CHAR_RANGE)));
 constexpr auto TILE_DELTA = 1.f / static_cast<float>(NUM_TILES_RT);
 
-DesktopTown::FontContext::FontContext(FontContext&& other) noexcept
-    : m_FT(other.m_FT),
-      m_CharMap(std::move(other.m_CharMap)),
-      m_Width(other.m_Width),
-      m_Height(other.m_Height),
-      m_Atlas(std::move(other.m_Atlas)),
-      m_Program(std::move(other.m_Program)),
-      m_VertexArray(std::move(other.m_VertexArray)),
-      m_VertexBuffer(std::move(other.m_VertexBuffer)),
-      m_IndexBuffer(std::move(other.m_IndexBuffer))
-{
-    other.m_FT = nullptr;
-    other.m_CharMap.clear();
-    other.m_Width = 0;
-    other.m_Height = 0;
-}
-
-DesktopTown::FontContext& DesktopTown::FontContext::operator=(FontContext&& other) noexcept
-{
-    m_FT = other.m_FT;
-    m_CharMap = std::move(other.m_CharMap);
-    m_Width = other.m_Width;
-    m_Height = other.m_Height;
-    m_Atlas = std::move(other.m_Atlas);
-    m_Program = std::move(other.m_Program);
-    m_VertexArray = std::move(other.m_VertexArray);
-    m_VertexBuffer = std::move(other.m_VertexBuffer);
-    m_IndexBuffer = std::move(other.m_IndexBuffer);
-
-    other.m_FT = nullptr;
-    other.m_CharMap.clear();
-    other.m_Width = 0;
-    other.m_Height = 0;
-
-    return *this;
-}
-
 void DesktopTown::FontContext::Init(const int window_width, const int window_height)
 {
     m_Program = GLProgram::Create();
+
+    {
+        GLint count;
+        glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &count);
+        std::cerr << "Number of binary formats: " << count << std::endl;
+        for (int i = 0; i < count; ++i)
+        {
+            GLint name;
+            glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, &name);
+            std::cerr << "#" << i << ": 0x" << std::hex << name << std::dec << std::endl;
+        }
+    }
 
     auto raw_data = ReadFile("text.gl", std::ios::binary);
     if (raw_data.empty())
     {
         std::cerr << "Recompiling Program..." << std::endl;
 
-        auto query = GLQuery::Create();
-        query.Begin(GL_TIME_ELAPSED);
-
+        const auto query = GLQuery::Create();
+        query.Measure(GL_TIME_ELAPSED, [&]
         {
-            const auto shader = GLShader::Create(GL_VERTEX_SHADER);
-            const auto source = ReadFileText("shader/text/vertex.glsl");
-            shader.SetSource(source);
-            if (shader.CompileAndCheck())
-                m_Program.Attach(shader);
-        }
-        {
-            const auto shader = GLShader::Create(GL_FRAGMENT_SHADER);
-            const auto source = ReadFileText("shader/text/fragment.glsl");
-            shader.SetSource(source);
-            if (shader.CompileAndCheck())
-                m_Program.Attach(shader);
-        }
+            {
+                const auto shader = GLShader::Create(GL_VERTEX_SHADER);
+                const auto source = ReadFileText("shader/text/vertex.glsl");
+                shader.SetSource(source);
+                if (shader.CompileAndCheck())
+                    m_Program.Attach(shader);
+            }
+            {
+                const auto shader = GLShader::Create(GL_FRAGMENT_SHADER);
+                const auto source = ReadFileText("shader/text/fragment.glsl");
+                shader.SetSource(source);
+                if (shader.CompileAndCheck())
+                    m_Program.Attach(shader);
+            }
 
-        (void)m_Program.LinkAndCheck();
-        (void)m_Program.ValidateAndCheck();
-        m_Program.DetachAll();
-
-        query.End();
+            (void)m_Program.LinkAndCheck();
+            (void)m_Program.ValidateAndCheck();
+            m_Program.DetachAll();
+        });
         GLuint64 time;
         glGetQueryObjectui64v(query.GetName(), GL_QUERY_RESULT, &time);
         std::cerr << "Done [" << time << " ns]" << std::endl;
@@ -112,19 +87,18 @@ void DesktopTown::FontContext::Init(const int window_width, const int window_hei
     {
         std::cerr << "Loading Program Binary..." << std::endl;
 
-        auto query = GLQuery::Create();
-        query.Begin(GL_TIME_ELAPSED);
-
-        const auto format = *reinterpret_cast<GLenum*>(raw_data.data());
-        std::vector data(raw_data.begin() + 4, raw_data.end());
-        const GLBinary binary
+        const auto query = GLQuery::Create();
+        query.Measure(GL_TIME_ELAPSED, [&]
         {
-            format,
-            std::move(data),
-        };
-        (void)m_Program.SetBinaryAndCheck(binary);
-
-        query.End();
+            const auto format = *reinterpret_cast<GLenum*>(raw_data.data());
+            std::vector data(raw_data.begin() + 4, raw_data.end());
+            const GLBinary binary
+            {
+                format,
+                std::move(data),
+            };
+            (void)m_Program.SetBinaryAndCheck(binary);
+        });
         GLuint64 time;
         glGetQueryObjectui64v(query.GetName(), GL_QUERY_RESULT, &time);
         std::cerr << "Done [" << time << " ns]" << std::endl;
@@ -135,19 +109,16 @@ void DesktopTown::FontContext::Init(const int window_width, const int window_hei
     const auto projection = glm::ortho(0.f, fw, 0.f, fh);
     m_Program.SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
-    m_VertexArray = GLVertexArray::Create();
-
-    m_VertexBuffer = GLBuffer::Create();
-    m_VertexArray.VertexBuffer(0, m_VertexBuffer, 0, sizeof(Vertex));
-
-    m_VertexArray.EnableAttrib(0);
-    m_VertexArray.AttribFormat(0, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, Position));
-    m_VertexArray.AttribBinding(0, 0);
-    m_VertexArray.EnableAttrib(1);
-    m_VertexArray.AttribFormat(1, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, Texture));
-    m_VertexArray.AttribBinding(1, 0);
-
-    m_IndexBuffer = GLBuffer::Create();
+    m_AtlasMesh.SetVertices({
+        {{0, 0}, {0, 1}},
+        {{0, 1}, {0, 0}},
+        {{1, 1}, {1, 0}},
+        {{1, 0}, {1, 1}},
+    });
+    m_AtlasMesh.SetIndices({
+        0, 1, 2,
+        2, 3, 0,
+    });
 }
 
 void DesktopTown::FontContext::LoadFont(
@@ -199,8 +170,8 @@ void DesktopTown::FontContext::LoadFont(
         };
     }
 
-    m_Width = NUM_TILES_RT * max_width;
-    m_Height = NUM_TILES_RT * max_height;
+    m_Width = static_cast<GLsizei>(NUM_TILES_RT * max_width);
+    m_Height = static_cast<GLsizei>(NUM_TILES_RT * max_height);
 
     m_Atlas = GLTexture::Create(GL_TEXTURE_2D);
     m_Atlas.Storage(1, GL_R32F, m_Width, m_Height);
@@ -214,12 +185,12 @@ void DesktopTown::FontContext::LoadFont(
     {
         FT_Load_Char(face, c, FT_LOAD_RENDER);
 
-        const GLsizei c_width = face->glyph->bitmap.width;
-        const GLsizei c_height = face->glyph->bitmap.rows;
+        const auto c_width = static_cast<GLsizei>(face->glyph->bitmap.width);
+        const auto c_height = static_cast<GLsizei>(face->glyph->bitmap.rows);
 
         const auto off = c - MIN_CHAR;
-        const GLint i = off % NUM_TILES_RT * max_width;
-        const GLint j = off / NUM_TILES_RT * max_height;
+        const auto i = static_cast<GLint>(off % NUM_TILES_RT * max_width);
+        const auto j = static_cast<GLint>(off / NUM_TILES_RT * max_height);
 
         m_Atlas.SubImage(0, i, j, c_width, c_height, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
     }
@@ -234,8 +205,8 @@ void DesktopTown::FontContext::DrawText(
     const float scale,
     const glm::vec3& color)
 {
-    m_VertexBuffer.Data<Vertex>(text.size() * 4, GL_DYNAMIC_DRAW);
-    m_IndexBuffer.Data<GLuint>(text.size() * 6, GL_DYNAMIC_DRAW);
+    std::vector<Vertex> vertices(text.size() * 4);
+    std::vector<GLuint> indices(text.size() * 6);
 
     auto x = start_x;
     for (unsigned i = 0; i < text.size(); ++i)
@@ -254,37 +225,38 @@ void DesktopTown::FontContext::DrawText(
         const auto w = static_cast<float>(size_.x) * scale;
         const auto h = static_cast<float>(size_.y) * scale;
 
-        const std::vector<Vertex> vertices
-        {
-            {{xpos + 0, ypos + 0}, {texture_.x, texture_.w}},
-            {{xpos + 0, ypos + h}, {texture_.x, texture_.y}},
-            {{xpos + w, ypos + h}, {texture_.z, texture_.y}},
-            {{xpos + w, ypos + 0}, {texture_.z, texture_.w}},
-        };
+        const GLuint base = i * 4;
 
-        const GLuint base = i * vertices.size();
-        const std::vector indices
-        {
-            base + 0u, base + 1u, base + 2u,
-            base + 2u, base + 3u, base + 0u,
+        VecView(vertices, i * 4) = {
+            Vertex{{xpos + 0, ypos + 0}, {texture_.x, texture_.w}},
+            Vertex{{xpos + 0, ypos + h}, {texture_.x, texture_.y}},
+            Vertex{{xpos + w, ypos + h}, {texture_.z, texture_.y}},
+            Vertex{{xpos + w, ypos + 0}, {texture_.z, texture_.w}},
         };
-
-        m_VertexBuffer.SubData(i * vertices.size(), vertices);
-        m_IndexBuffer.SubData(i * indices.size(), indices);
+        VecView(indices, i * 6) = {
+            base + 0, base + 1, base + 2,
+            base + 2, base + 3, base + 0,
+        };
 
         x += static_cast<float>(advance_ >> 6) * scale;
     }
 
-    m_VertexArray.Bind();
-    m_IndexBuffer.Bind(GL_ELEMENT_ARRAY_BUFFER);
+    m_TextMesh.SetVertices(vertices);
+    m_TextMesh.SetIndices(indices);
+
     m_Atlas.BindUnit(0);
-    m_Program.Use();
+
+    const auto defer_pgm = m_Program.Bind();
+
+    glm::mat4 model(1.f);
+
     m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
+    m_Program.SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glDrawElements(GL_TRIANGLES, text.size() * 6, GL_UNSIGNED_INT, nullptr);
+    m_TextMesh.Draw();
 
     glDisable(GL_BLEND);
 }
@@ -292,39 +264,24 @@ void DesktopTown::FontContext::DrawText(
 void DesktopTown::FontContext::DrawAtlas(
     const float start_x,
     const float start_y,
-    const float scale,
+    const float scalar,
     const glm::vec3& color)
 {
-    const auto fw = static_cast<float>(m_Width) * scale;
-    const auto fh = static_cast<float>(m_Height) * scale;
-
-    const std::vector<Vertex> vertices
-    {
-        {{start_x + 00, start_y + 00}, {0.f, 1.f}},
-        {{start_x + 00, start_y + fh}, {0.f, 0.f}},
-        {{start_x + fw, start_y + fh}, {1.f, 0.f}},
-        {{start_x + fw, start_y + 00}, {1.f, 1.f}},
-    };
-
-    const std::vector indices
-    {
-        0u, 1u, 2u,
-        2u, 3u, 0u,
-    };
-
-    m_VertexBuffer.Data(vertices, GL_DYNAMIC_DRAW);
-    m_IndexBuffer.Data(indices, GL_DYNAMIC_DRAW);
-
-    m_VertexArray.Bind();
-    m_IndexBuffer.Bind(GL_ELEMENT_ARRAY_BUFFER);
     m_Atlas.BindUnit(0);
-    m_Program.Use();
+
+    const auto defer_pgm = m_Program.Bind();
+
+    glm::mat4 model(1.f);
+    model = translate(model, glm::vec3(start_x, start_y, 0.f));
+    model = scale(model, glm::vec3(static_cast<float>(m_Width) * scalar, static_cast<float>(m_Height) * scalar, 1.f));
+
     m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
+    m_Program.SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    m_AtlasMesh.Draw();
 
     glDisable(GL_BLEND);
 }

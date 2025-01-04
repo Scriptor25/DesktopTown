@@ -1,4 +1,4 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLFramebuffer.hpp>
 
 DesktopTown::GLFramebuffer::GLFramebuffer(const GLuint name)
     : GLObject(GL_FRAMEBUFFER, name)

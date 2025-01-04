@@ -1,4 +1,5 @@
-#include <DesktopTown/GL.hpp>
+#include <DesktopTown/GL/GLBuffer.hpp>
+#include <DesktopTown/GL/GLVertexArray.hpp>
 
 DesktopTown::GLVertexArray::GLVertexArray(const GLuint name)
     : GLObject(GL_VERTEX_ARRAY, name)
@@ -27,9 +28,13 @@ DesktopTown::GLVertexArray& DesktopTown::GLVertexArray::operator=(GLVertexArray&
     return *this;
 }
 
-void DesktopTown::GLVertexArray::Bind() const
+DesktopTown::GLDefer DesktopTown::GLVertexArray::Bind() const
 {
     glBindVertexArray(m_Name);
+    return GLDefer([]
+    {
+        glBindVertexArray(0);
+    });
 }
 
 void DesktopTown::GLVertexArray::VertexBuffer(

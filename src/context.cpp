@@ -1,6 +1,7 @@
 #include <string>
 #include <DesktopTown/Context.hpp>
 #include <DesktopTown/GL.hpp>
+#include <DesktopTown/WindowUtil.hpp>
 
 static void on_error(const int error_code, const char* description)
 {
@@ -18,7 +19,6 @@ static void APIENTRY on_debug(
 {
     fprintf(stderr, "[OpenGL 0x%08X] %.*s\r\n", id, length, message);
     fflush(stderr);
-    return;
 }
 
 DesktopTown::Context::Context()
