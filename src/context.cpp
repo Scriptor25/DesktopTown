@@ -42,9 +42,6 @@ static void on_debug(
 
     fprintf(stderr, "[OpenGL %s 0x%08X] %.*s\r\n", level, id, length, message);
     fflush(stderr);
-
-    if (severity == GL_DEBUG_SEVERITY_HIGH)
-        __debugbreak();
 }
 
 static void on_framebuffer_size(GLFWwindow *window, int, int)
