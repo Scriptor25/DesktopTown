@@ -119,9 +119,6 @@ DesktopTown::Context::Context()
 
     // glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
     glClearColor(0.f, 0.f, 0.f, 0.f);
-
-    glfwHideWindow(m_Window);
-    glfwShowWindow(m_Window);
 }
 
 DesktopTown::Context::~Context()
