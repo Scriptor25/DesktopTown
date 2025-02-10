@@ -32,7 +32,7 @@ protected:
             if (IsMouseButtonUp(GLFW_MOUSE_BUTTON_LEFT))
                 DesktopTown::Info("you clicked a building");
 
-        if (m_ExitDoor.Draw(m_AnimationFrame, 0.f, height - 64.f, 2.f))
+        if (m_ExitDoor.Draw(m_AnimationFrame, 0.f, static_cast<float>(height) - 64.f, 2.f))
             if (IsMouseButtonUp(GLFW_MOUSE_BUTTON_LEFT))
                 Stop();
 

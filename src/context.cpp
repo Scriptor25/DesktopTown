@@ -79,10 +79,9 @@ DesktopTown::Context::Context()
     glfwInit();
 
     glfwDefaultWindowHints();
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
@@ -104,6 +103,7 @@ DesktopTown::Context::Context()
     }
 
     glfwHideTaskbarIcon(m_Window);
+
     glfwSetFramebufferSizeCallback(m_Window, on_framebuffer_size);
 
     glfwMakeContextCurrent(m_Window);
@@ -119,6 +119,9 @@ DesktopTown::Context::Context()
 
     // glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
     glClearColor(0.f, 0.f, 0.f, 0.f);
+
+    glfwHideWindow(m_Window);
+    glfwShowWindow(m_Window);
 }
 
 DesktopTown::Context::~Context()
@@ -186,8 +189,8 @@ void DesktopTown::Context::GetCursor(float &xpos, float &ypos) const
 
     double x, y;
     glfwGetCursorPos(m_Window, &x, &y);
-    xpos = x;
-    ypos = height - y - 1;
+    xpos = static_cast<float>(x);
+    ypos = static_cast<float>(height - y - 1);
 }
 
 bool DesktopTown::Context::IsMouseButtonDown(const int button) const

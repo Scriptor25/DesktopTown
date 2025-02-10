@@ -1,6 +1,7 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw.git
+	branch = latest
 [submodule "deps/glew"]
 	path = deps/glew
 	url = https://github.com/Perlmint/glew-cmake

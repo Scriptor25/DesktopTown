@@ -11,9 +11,9 @@ namespace DesktopTown
 {
     struct ButtonState
     {
-        bool Press() const;
-        bool Release() const;
-        bool Repeat() const;
+        [[nodiscard]] bool Press() const;
+        [[nodiscard]] bool Release() const;
+        [[nodiscard]] bool Repeat() const;
 
         void Update(bool next);
 
@@ -55,7 +55,7 @@ namespace DesktopTown
         GLFWwindow *m_Window;
 
         bool m_Dirty = true;
-        glm::mat4 m_Projection;
+        glm::mat4 m_Projection{1.f};
 
         std::unordered_set<void *> m_WantFocus;
 
