@@ -10,7 +10,8 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
-DesktopTown::FontContext::FontContext(const Context *context)
+DesktopTown::FontContext::FontContext(Context *context)
+    : m_Context(context)
 {
     FT_Init_FreeType(&m_FT);
 
@@ -21,13 +22,6 @@ DesktopTown::FontContext::FontContext(const Context *context)
 
     if (m_Material.Load())
         Error("Failed to load text material.");
-
-    int window_width, window_height;
-    context->GetSize(window_width, window_height);
-    const auto fw = static_cast<float>(window_width);
-    const auto fh = static_cast<float>(window_height);
-    const auto projection = glm::ortho(0.f, fw, 0.f, fh);
-    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     m_AtlasMesh.SetVertices(
         {
@@ -145,65 +139,73 @@ void DesktopTown::FontContext::DrawText(
     const std::wstring &text,
     const float start_x,
     const float start_y,
-    const float scale,
+    const float font_scale,
     const glm::vec3 &color)
 {
-    std::vector<Vertex> vertices(text.size() * 4);
-    std::vector<GLuint> indices(text.size() * 6);
-
-    auto x = start_x;
-    for (unsigned i = 0; i < text.size(); ++i)
+    if (!m_TextMeshCache.contains(text))
     {
-        auto &c = text[i];
-        auto &[
-            texture_,
-            size_,
-            bearing_,
-            advance_
-        ] = m_CharMap[c];
+        std::vector<Vertex> vertices(text.size() * 4);
+        std::vector<GLuint> indices(text.size() * 6);
 
-        const auto xpos = x + static_cast<float>(bearing_.x) * scale;
-        const auto ypos = start_y - static_cast<float>(size_.y - bearing_.y) * scale;
+        auto x = 0.f;
+        for (unsigned i = 0; i < text.size(); ++i)
+        {
+            auto &c = text[i];
+            auto &[
+                texture_,
+                size_,
+                bearing_,
+                advance_
+            ] = m_CharMap[c];
 
-        const auto w = static_cast<float>(size_.x) * scale;
-        const auto h = static_cast<float>(size_.y) * scale;
+            const auto xpos = x + static_cast<float>(bearing_.x);
+            const auto ypos = -static_cast<float>(size_.y - bearing_.y);
 
-        const auto base = i * 4;
+            const auto w = static_cast<float>(size_.x);
+            const auto h = static_cast<float>(size_.y);
 
-        VecView(vertices, i * 4) = {
-            Vertex{{xpos + 0, ypos + 0}, {texture_.x, texture_.w}},
-            Vertex{{xpos + 0, ypos + h}, {texture_.x, texture_.y}},
-            Vertex{{xpos + w, ypos + h}, {texture_.z, texture_.y}},
-            Vertex{{xpos + w, ypos + 0}, {texture_.z, texture_.w}},
-        };
-        VecView(indices, i * 6) = {
-            base + 0,
-            base + 1,
-            base + 2,
-            base + 2,
-            base + 3,
-            base + 0,
-        };
+            const auto base = i * 4;
 
-        x += static_cast<float>(advance_ >> 6) * scale;
+            VecView(vertices, i * 4) = {
+                Vertex{{xpos + 0, ypos + 0}, {texture_.x, texture_.w}},
+                Vertex{{xpos + 0, ypos + h}, {texture_.x, texture_.y}},
+                Vertex{{xpos + w, ypos + h}, {texture_.z, texture_.y}},
+                Vertex{{xpos + w, ypos + 0}, {texture_.z, texture_.w}},
+            };
+            VecView(indices, i * 6) = {
+                base + 0,
+                base + 1,
+                base + 2,
+                base + 2,
+                base + 3,
+                base + 0,
+            };
+
+            x += static_cast<float>(advance_ >> 6);
+        }
+
+        auto &text_mesh = m_TextMeshCache[text];
+        text_mesh.SetVertices(vertices);
+        text_mesh.SetIndices(indices);
     }
-
-    m_TextMesh.SetVertices(vertices);
-    m_TextMesh.SetIndices(indices);
 
     m_Atlas.BindUnit(0);
 
     const auto defer_material = m_Material->Bind();
 
     glm::mat4 model(1.f);
+    model = translate(model, glm::vec3(start_x, start_y, 0.f));
+    model = scale(model, glm::vec3(font_scale, font_scale, 1.f));
+    auto &projection = m_Context->GetProjection();
 
     m_Material->SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
     m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    m_TextMesh.Draw();
+    m_TextMeshCache[text].Draw();
 
     glDisable(GL_BLEND);
 }
@@ -211,7 +213,7 @@ void DesktopTown::FontContext::DrawText(
 void DesktopTown::FontContext::DrawAtlas(
     const float start_x,
     const float start_y,
-    const float scalar,
+    const float font_scale,
     const glm::vec3 &color)
 {
     m_Atlas.BindUnit(0);
@@ -220,10 +222,17 @@ void DesktopTown::FontContext::DrawAtlas(
 
     glm::mat4 model(1.f);
     model = translate(model, glm::vec3(start_x, start_y, 0.f));
-    model = scale(model, glm::vec3(static_cast<float>(m_Width) * scalar, static_cast<float>(m_Height) * scalar, 1.f));
+    model = scale(
+        model,
+        glm::vec3(
+            static_cast<float>(m_Width) * font_scale,
+            static_cast<float>(m_Height) * font_scale,
+            1.f));
+    auto &projection = m_Context->GetProjection();
 
     m_Material->SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
     m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

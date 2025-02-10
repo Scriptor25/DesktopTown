@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_NONE
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 namespace DesktopTown
 {
@@ -18,6 +19,9 @@ namespace DesktopTown
         [[nodiscard]] GLFWwindow *GetWindow() const;
         void GetSize(int &width, int &height) const;
 
+        void Invalidate();
+        const glm::mat4 &GetProjection();
+
     protected:
         virtual void OnStart();
         virtual void OnUpdate();
@@ -25,5 +29,8 @@ namespace DesktopTown
 
     private:
         GLFWwindow *m_Window;
+
+        bool m_Dirty = true;
+        glm::mat4 m_Projection;
     };
 }

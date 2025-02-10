@@ -3,6 +3,7 @@
 #include <DesktopTown/Error.hpp>
 #include <DesktopTown/GL.hpp>
 #include <DesktopTown/WindowUtil.hpp>
+#include <glm/ext.hpp>
 
 static void on_error(const int error_code, const char *description)
 {
@@ -42,6 +43,11 @@ static void APIENTRY on_debug(
     fflush(stderr);
 }
 
+static void on_framebuffer_size(GLFWwindow *window, int, int)
+{
+    static_cast<DesktopTown::Context *>(glfwGetWindowUserPointer(window))->Invalidate();
+}
+
 DesktopTown::Context::Context()
 {
     glfwSetErrorCallback(on_error);
@@ -73,6 +79,7 @@ DesktopTown::Context::Context()
     }
 
     glfwHideTaskbarIcon(m_Window);
+    glfwSetFramebufferSizeCallback(m_Window, on_framebuffer_size);
 
     glfwMakeContextCurrent(m_Window);
     glfwSwapInterval(1);
@@ -130,6 +137,29 @@ GLFWwindow *DesktopTown::Context::GetWindow() const
 void DesktopTown::Context::GetSize(int &width, int &height) const
 {
     glfwGetFramebufferSize(m_Window, &width, &height);
+}
+
+void DesktopTown::Context::Invalidate()
+{
+    m_Dirty = true;
+}
+
+const glm::mat4 &DesktopTown::Context::GetProjection()
+{
+    if (m_Dirty)
+    {
+        m_Dirty = false;
+
+        int width, height;
+        GetSize(width, height);
+        const auto float_width = static_cast<float>(width);
+        const auto float_height = static_cast<float>(height);
+
+        m_Projection = glm::mat4(1.f);
+        m_Projection = glm::ortho(0.f, float_width, 0.f, float_height);
+    }
+
+    return m_Projection;
 }
 
 void DesktopTown::Context::OnStart()

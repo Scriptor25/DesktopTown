@@ -22,14 +22,16 @@ namespace DesktopTown
         };
 
     public:
-        explicit FontContext(const Context *context);
+        explicit FontContext(Context *context);
         ~FontContext();
 
         void LoadFont(const std::string &filename, FT_UInt width = 0, FT_UInt height = 0, FT_Long index = 0);
-        void DrawText(const std::wstring &text, float start_x, float start_y, float scale, const glm::vec3 &color);
-        void DrawAtlas(float start_x, float start_y, float scalar, const glm::vec3 &color);
+        void DrawText(const std::wstring &text, float start_x, float start_y, float font_scale, const glm::vec3 &color);
+        void DrawAtlas(float start_x, float start_y, float font_scale, const glm::vec3 &color);
 
     private:
+        Context *m_Context;
+
         FT_Library m_FT{};
 
         std::map<wchar_t, Character> m_CharMap;
@@ -38,7 +40,7 @@ namespace DesktopTown
         GLTexture m_Atlas;
         Material m_Material;
 
-        Mesh m_TextMesh;
+        std::map<std::wstring, Mesh> m_TextMeshCache;
         Mesh m_AtlasMesh;
     };
 }

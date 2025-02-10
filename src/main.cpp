@@ -16,16 +16,13 @@ public:
 protected:
     void OnStart() override
     {
-        int width, height;
-        GetSize(width, height);
         m_Fonts.LoadFont("font/Gothic3.ttf", 0, 48);
-
         m_Sprite.Load("image/town_building_01.png");
     }
 
     void OnUpdate() override
     {
-        m_Sprite.Draw(m_AnimationFrame, 0.f, 80.f, 8.f);
+        m_Sprite.Draw(m_AnimationFrame, 0.f, 90.f, 8.f);
 
         if (const auto current = glfwGetTime(); current - m_Time > 0.5f)
         {
@@ -36,7 +33,7 @@ protected:
         m_Fonts.DrawText(
             L"Hello World!",
             0.f,
-            48.f,
+            40.f,
             1.f,
             {1.f, 1.f, 0.f});
         m_Fonts.DrawText(
@@ -45,7 +42,6 @@ protected:
             0.f,
             .5f,
             {0.f, 1.f, 1.f});
-        // m_Fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
     }
 
 private:

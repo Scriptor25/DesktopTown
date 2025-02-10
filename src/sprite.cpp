@@ -4,7 +4,8 @@
 #include <DesktopTown/Sprite.hpp>
 #include <glm/ext.hpp>
 
-DesktopTown::Sprite::Sprite(const Context *context)
+DesktopTown::Sprite::Sprite(Context *context)
+    : m_Context(context)
 {
     std::vector<ShaderInfo> shader_infos;
     shader_infos.emplace_back("sprite.vertex.gl", "shader/sprite/vertex.glsl", GL_VERTEX_SHADER);
@@ -13,13 +14,6 @@ DesktopTown::Sprite::Sprite(const Context *context)
 
     if (m_Material.Load())
         Error("Failed to load sprite material.");
-
-    int window_width, window_height;
-    context->GetSize(window_width, window_height);
-    const auto fw = static_cast<float>(window_width);
-    const auto fh = static_cast<float>(window_height);
-    const auto projection = glm::ortho(0.f, fw, 0.f, fh);
-    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     m_Mesh.SetVertices(
         {
@@ -88,7 +82,10 @@ void DesktopTown::Sprite::Draw(unsigned frame, const float x, const float y, con
     glm::mat4 model(1.f);
     model = translate(model, glm::vec3(x, y, 0.f));
     model = scale(model, glm::vec3(s * m_FrameWidth, s * m_FrameHeight, 1.f));
+    const auto &projection = m_Context->GetProjection();
+
     m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     m_Material->SetUniform<Uniform_Float2>("FRAME_SCALE", 1.f, m_FrameScale);
     m_Material->SetUniform<Uniform_Float2>("FRAME_OFFSET", 0.f, static_cast<float>(frame) * m_FrameScale);
