@@ -11,7 +11,7 @@ static void on_error(const int error_code, const char *description)
     fprintf(stderr, "[GLFW 0x%08X] %s\r\n", error_code, description);
 }
 
-static void APIENTRY on_debug(
+static void on_debug(
     const GLenum /*source*/,
     const GLenum /*type*/,
     const GLuint id,
