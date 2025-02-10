@@ -17,13 +17,13 @@ DesktopTown::GLProgram::~GLProgram()
     glDeleteProgram(m_Name);
 }
 
-DesktopTown::GLProgram::GLProgram(GLProgram&& other) noexcept
+DesktopTown::GLProgram::GLProgram(GLProgram &&other) noexcept
     : GLObject(GL_PROGRAM, other.m_Name)
 {
     other.m_Name = 0;
 }
 
-DesktopTown::GLProgram& DesktopTown::GLProgram::operator=(GLProgram&& other) noexcept
+DesktopTown::GLProgram &DesktopTown::GLProgram::operator=(GLProgram &&other) noexcept
 {
     std::swap(m_Name, other.m_Name);
     return *this;
@@ -45,12 +45,12 @@ std::string DesktopTown::GLProgram::GetInfoLog() const
     return info_log;
 }
 
-void DesktopTown::GLProgram::Attach(const GLShader& shader) const
+void DesktopTown::GLProgram::Attach(const GLShader &shader) const
 {
     glAttachShader(m_Name, shader.GetName());
 }
 
-void DesktopTown::GLProgram::Detach(const GLShader& shader) const
+void DesktopTown::GLProgram::Detach(const GLShader &shader) const
 {
     glDetachShader(m_Name, shader.GetName());
 }
@@ -66,19 +66,12 @@ bool DesktopTown::GLProgram::LinkAndCheck()
     Link();
 
     if (Get(GL_LINK_STATUS))
-        return true;
+        return false;
 
     const auto label = GetLabel();
     const auto info_log = GetInfoLog();
-    Error(
-        GL_DEBUG_TYPE_ERROR,
-        0x0003,
-        GL_DEBUG_SEVERITY_HIGH,
-        "Failed to link program '{}' ({}): {}",
-        label,
-        m_Name,
-        info_log);
-    return false;
+    Error("Failed to link program '{}' ({}): {}", label, m_Name, info_log);
+    return true;
 }
 
 void DesktopTown::GLProgram::Validate() const
@@ -91,55 +84,42 @@ bool DesktopTown::GLProgram::ValidateAndCheck() const
     Validate();
 
     if (Get(GL_VALIDATE_STATUS))
-        return true;
+        return false;
 
     const auto label = GetLabel();
     const auto info_log = GetInfoLog();
-    Error(
-        GL_DEBUG_TYPE_ERROR,
-        0x0004,
-        GL_DEBUG_SEVERITY_HIGH,
-        "Failed to validate program '{}' ({}): {}",
-        label,
-        m_Name,
-        info_log);
-    return false;
+    Error("Failed to validate program '{}' ({}): {}", label, m_Name, info_log);
+    return true;
 }
 
 DesktopTown::GLDefer DesktopTown::GLProgram::Bind() const
 {
     glUseProgram(m_Name);
-    return GLDefer([]
-    {
-        glUseProgram(0);
-    });
+    return GLDefer(
+        []
+        {
+            glUseProgram(0);
+        });
 }
 
-void DesktopTown::GLProgram::BindAttribLocation(const GLuint index, const std::string& name) const
+void DesktopTown::GLProgram::BindAttribLocation(const GLuint index, const std::string &name) const
 {
     glBindAttribLocation(m_Name, index, name.c_str());
 }
 
-void DesktopTown::GLProgram::BindFragDataLocation(const GLuint color_number, const std::string& name) const
+void DesktopTown::GLProgram::BindFragDataLocation(const GLuint color_number, const std::string &name) const
 {
     glBindFragDataLocation(m_Name, color_number, name.c_str());
 }
 
-GLint DesktopTown::GLProgram::GetUniformLocation(const std::string& name)
+GLint DesktopTown::GLProgram::GetUniformLocation(const std::string &name)
 {
     if (m_Locations.contains(name))
         return m_Locations.at(name);
 
     const auto location = glGetUniformLocation(m_Name, name.c_str());
     if (location < 0)
-    {
-        Error(
-            GL_DEBUG_TYPE_ERROR,
-            0x0001,
-            GL_DEBUG_SEVERITY_MEDIUM,
-            "No uniform with name '{}'",
-            name);
-    }
+        Warning("No uniform with name '{}'", name);
 
     return m_Locations[name] = location;
 }
@@ -155,7 +135,7 @@ std::vector<GLuint> DesktopTown::GLProgram::GetAttachedShaders() const
 
 void DesktopTown::GLProgram::DetachAll() const
 {
-    for (const auto& shader : GetAttachedShaders())
+    for (const auto &shader: GetAttachedShaders())
         glDetachShader(m_Name, shader);
 }
 
@@ -169,7 +149,7 @@ DesktopTown::GLBinary DesktopTown::GLProgram::GetBinary() const
     return {format, std::move(data)};
 }
 
-void DesktopTown::GLProgram::SetBinary(const GLBinary& binary) const
+void DesktopTown::GLProgram::SetBinary(const GLBinary &binary) const
 {
     glProgramBinary(m_Name, binary.Format, binary.Data.data(), static_cast<GLsizei>(binary.Data.size()));
 }
@@ -179,24 +159,17 @@ void DesktopTown::GLProgram::SetSeparable(const bool separable) const
     glProgramParameteri(m_Name, GL_PROGRAM_SEPARABLE, separable);
 }
 
-bool DesktopTown::GLProgram::SetBinaryAndCheck(const GLBinary& binary) const
+bool DesktopTown::GLProgram::SetBinaryAndCheck(const GLBinary &binary) const
 {
     SetBinary(binary);
 
     if (Get(GL_LINK_STATUS))
-        return true;
+        return false;
 
     const auto label = GetLabel();
     const auto info_log = GetInfoLog();
-    Error(
-        GL_DEBUG_TYPE_ERROR,
-        0x0006,
-        GL_DEBUG_SEVERITY_MEDIUM,
-        "Failed to set binary for program '{}' ({}): {}",
-        label,
-        m_Name,
-        info_log);
-    return false;
+    Error("Failed to set binary for program '{}' ({}): {}", label, m_Name, info_log);
+    return true;
 }
 
 DesktopTown::GLProgram DesktopTown::GLProgram::Create()

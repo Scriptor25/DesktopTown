@@ -16,8 +16,8 @@ namespace DesktopTown
     public:
         Mesh();
 
-        void SetVertices(const std::vector<Vertex>& vertices) const;
-        void SetIndices(const std::vector<GLuint>& indices);
+        void SetVertices(const std::vector<Vertex> &vertices) const;
+        void SetIndices(const std::vector<GLuint> &indices);
 
         void Draw() const;
 

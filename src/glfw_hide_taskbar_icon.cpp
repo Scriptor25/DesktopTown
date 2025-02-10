@@ -5,7 +5,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-void DesktopTown::glfwHideTaskbarIcon(GLFWwindow* window)
+void DesktopTown::glfwHideTaskbarIcon(GLFWwindow *window)
 {
     const auto hwnd = glfwGetWin32Window(window);
 

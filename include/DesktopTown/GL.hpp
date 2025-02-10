@@ -9,13 +9,13 @@ namespace DesktopTown
     class GLDefer
     {
     public:
-        explicit GLDefer(std::function<void()>&& defer);
+        explicit GLDefer(std::function<void()> &&defer);
         ~GLDefer();
 
-        GLDefer(const GLDefer&) = delete;
-        GLDefer& operator=(const GLDefer&) = delete;
-        GLDefer(GLDefer&& other) noexcept;
-        GLDefer& operator=(GLDefer&& other) noexcept;
+        GLDefer(const GLDefer &) = delete;
+        GLDefer &operator=(const GLDefer &) = delete;
+        GLDefer(GLDefer &&other) noexcept;
+        GLDefer &operator=(GLDefer &&other) noexcept;
 
     private:
         std::function<void()> m_Defer;

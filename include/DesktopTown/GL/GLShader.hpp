@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <DesktopTown/GL.hpp>
 #include <DesktopTown/GL/GLObject.hpp>
 
 namespace DesktopTown
@@ -14,15 +13,17 @@ namespace DesktopTown
         GLShader();
         ~GLShader() override;
 
-        GLShader(const GLShader&) = delete;
-        GLShader& operator=(const GLShader&) = delete;
-        GLShader(GLShader&& other) noexcept;
-        GLShader& operator=(GLShader&& other) noexcept;
+        GLShader(const GLShader &) = delete;
+        GLShader &operator=(const GLShader &) = delete;
+        GLShader(GLShader &&other) noexcept;
+        GLShader &operator=(GLShader &&other) noexcept;
 
         [[nodiscard]] GLint Get(GLenum pname) const;
         [[nodiscard]] std::string GetInfoLog() const;
 
-        void SetSource(const std::string& string) const;
+        void SetSource(const std::string &string) const;
+        void SetBinary(const GLBinary &binary) const;
+        void Specialize(const std::string &entry_point) const;
         void Compile() const;
 
         [[nodiscard]] bool CompileAndCheck() const;

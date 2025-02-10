@@ -7,14 +7,17 @@
 class App final : public DesktopTown::Context
 {
 public:
-    App() = default;
+    App()
+        : m_Fonts(this),
+          m_Sprite(this)
+    {
+    }
 
 protected:
     void OnStart() override
     {
         int width, height;
         GetSize(width, height);
-        m_Fonts.Init(width, height);
         m_Fonts.LoadFont("font/Gothic3.ttf", 0, 48);
 
         m_Sprite.Load("image/town_building_01.png");
@@ -22,6 +25,14 @@ protected:
 
     void OnUpdate() override
     {
+        m_Sprite.Draw(m_AnimationFrame, 0.f, 80.f, 8.f);
+
+        if (const auto current = glfwGetTime(); current - m_Time > 0.5f)
+        {
+            m_Time = current;
+            m_AnimationFrame++;
+        }
+
         m_Fonts.DrawText(
             L"Hello World!",
             0.f,
@@ -34,12 +45,16 @@ protected:
             0.f,
             .5f,
             {0.f, 1.f, 1.f});
-        m_Fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
+        // m_Fonts.DrawAtlas(0.f, 96.f, .2f, {1.f, 0.f, 1.f});
     }
 
 private:
     DesktopTown::FontContext m_Fonts;
     DesktopTown::Sprite m_Sprite;
+
+    unsigned m_AnimationFrame = 0;
+
+    double m_Time = 0.f;
 };
 
 int main()

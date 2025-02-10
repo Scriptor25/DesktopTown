@@ -18,7 +18,7 @@ namespace DesktopTown
         [[nodiscard]] GLuint GetName() const;
         [[nodiscard]] virtual std::string GetLabel() const;
 
-        virtual void SetLabel(const std::string& label) const;
+        virtual void SetLabel(const std::string &label) const;
         virtual void RemoveLabel() const;
     };
 }

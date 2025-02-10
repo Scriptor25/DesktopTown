@@ -16,13 +16,13 @@ DesktopTown::GLPipeline::~GLPipeline()
     glDeleteProgramPipelines(1, &m_Name);
 }
 
-DesktopTown::GLPipeline::GLPipeline(GLPipeline&& other) noexcept
+DesktopTown::GLPipeline::GLPipeline(GLPipeline &&other) noexcept
     : GLObject(GL_PROGRAM_PIPELINE, other.m_Name)
 {
     other.m_Name = 0;
 }
 
-DesktopTown::GLPipeline& DesktopTown::GLPipeline::operator=(GLPipeline&& other) noexcept
+DesktopTown::GLPipeline &DesktopTown::GLPipeline::operator=(GLPipeline &&other) noexcept
 {
     std::swap(m_Name, other.m_Name);
     return *this;
@@ -31,13 +31,14 @@ DesktopTown::GLPipeline& DesktopTown::GLPipeline::operator=(GLPipeline&& other) 
 DesktopTown::GLDefer DesktopTown::GLPipeline::Bind() const
 {
     glBindProgramPipeline(m_Name);
-    return GLDefer([]
-    {
-        glBindProgramPipeline(0);
-    });
+    return GLDefer(
+        []
+        {
+            glBindProgramPipeline(0);
+        });
 }
 
-void DesktopTown::GLPipeline::UseStages(const GLbitfield stages, const GLProgram& program) const
+void DesktopTown::GLPipeline::UseStages(const GLbitfield stages, const GLProgram &program) const
 {
     glUseProgramStages(m_Name, stages, program.GetName());
 }

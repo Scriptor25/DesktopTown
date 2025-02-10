@@ -13,10 +13,10 @@ namespace DesktopTown
         GLRenderbuffer();
         ~GLRenderbuffer() override;
 
-        GLRenderbuffer(const GLRenderbuffer&) = delete;
-        GLRenderbuffer& operator=(const GLRenderbuffer&) = delete;
-        GLRenderbuffer(GLRenderbuffer&& other) noexcept;
-        GLRenderbuffer& operator=(GLRenderbuffer&& other) noexcept;
+        GLRenderbuffer(const GLRenderbuffer &) = delete;
+        GLRenderbuffer &operator=(const GLRenderbuffer &) = delete;
+        GLRenderbuffer(GLRenderbuffer &&other) noexcept;
+        GLRenderbuffer &operator=(GLRenderbuffer &&other) noexcept;
 
         static GLRenderbuffer Create();
     };

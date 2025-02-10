@@ -14,15 +14,15 @@ DesktopTown::Mesh::Mesh()
     m_VertexArray.AttribBinding(1, 0);
 }
 
-void DesktopTown::Mesh::SetVertices(const std::vector<Vertex>& vertices) const
+void DesktopTown::Mesh::SetVertices(const std::vector<Vertex> &vertices) const
 {
     m_VertexBuffer.Data(vertices, GL_DYNAMIC_DRAW);
 }
 
-void DesktopTown::Mesh::SetIndices(const std::vector<GLuint>& indices)
+void DesktopTown::Mesh::SetIndices(const std::vector<GLuint> &indices)
 {
     m_IndexBuffer.Data(indices, GL_DYNAMIC_DRAW);
-    m_Count = indices.size();
+    m_Count = static_cast<GLsizei>(indices.size());
 }
 
 void DesktopTown::Mesh::Draw() const

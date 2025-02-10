@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
+#include <DesktopTown/Material.hpp>
 #include <DesktopTown/Mesh.hpp>
-#include <DesktopTown/GL/GLProgram.hpp>
 #include <DesktopTown/GL/GLTexture.hpp>
 
 namespace DesktopTown
@@ -10,17 +10,18 @@ namespace DesktopTown
     class Sprite
     {
     public:
-        Sprite();
+        explicit Sprite(const Context *context);
 
-        void Load(const std::string& filename);
+        void Load(const std::string &filename);
         void Draw(unsigned frame, float x, float y, float s);
 
     private:
         GLTexture m_Texture;
-        GLProgram m_Program;
+        Material m_Material;
         Mesh m_Mesh;
 
-        float m_FrameHeight{};
+        float m_FrameScale{};
+        float m_FrameWidth{}, m_FrameHeight{};
         unsigned m_NumFrames{};
     };
 }

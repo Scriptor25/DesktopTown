@@ -2,8 +2,8 @@
 
 #include <map>
 #include <string>
+#include <DesktopTown/Material.hpp>
 #include <DesktopTown/Mesh.hpp>
-#include <DesktopTown/GL/GLProgram.hpp>
 #include <DesktopTown/GL/GLTexture.hpp>
 #include <freetype/freetype.h>
 #include <GL/glew.h>
@@ -22,14 +22,12 @@ namespace DesktopTown
         };
 
     public:
-        FontContext();
+        explicit FontContext(const Context *context);
         ~FontContext();
 
-        void Init(int window_width, int window_height);
-
-        void LoadFont(const std::string& filename, FT_UInt width = 0, FT_UInt height = 0, FT_Long index = 0);
-        void DrawText(const std::wstring& text, float start_x, float start_y, float scale, const glm::vec3& color);
-        void DrawAtlas(float start_x, float start_y, float scalar, const glm::vec3& color);
+        void LoadFont(const std::string &filename, FT_UInt width = 0, FT_UInt height = 0, FT_Long index = 0);
+        void DrawText(const std::wstring &text, float start_x, float start_y, float scale, const glm::vec3 &color);
+        void DrawAtlas(float start_x, float start_y, float scalar, const glm::vec3 &color);
 
     private:
         FT_Library m_FT{};
@@ -38,7 +36,7 @@ namespace DesktopTown
 
         GLsizei m_Width{}, m_Height{};
         GLTexture m_Atlas;
-        GLProgram m_Program;
+        Material m_Material;
 
         Mesh m_TextMesh;
         Mesh m_AtlasMesh;

@@ -1,18 +1,50 @@
 #include <filesystem>
 #include <ranges>
 #include <span>
+#include <DesktopTown/Context.hpp>
+#include <DesktopTown/Error.hpp>
 #include <DesktopTown/FileUtil.hpp>
 #include <DesktopTown/FontContext.hpp>
+#include <DesktopTown/VecView.hpp>
 #include <DesktopTown/GL/GLQuery.hpp>
-#include <DesktopTown/GL/GLShader.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
-#include "DesktopTown/VecView.hpp"
-
-DesktopTown::FontContext::FontContext()
+DesktopTown::FontContext::FontContext(const Context *context)
 {
     FT_Init_FreeType(&m_FT);
+
+    std::vector<ShaderInfo> shader_infos;
+    shader_infos.emplace_back("text.vertex.gl", "shader/text/vertex.glsl", GL_VERTEX_SHADER);
+    shader_infos.emplace_back("text.fragment.gl", "shader/text/fragment.glsl",GL_FRAGMENT_SHADER);
+    m_Material = Material("text.gl", std::move(shader_infos));
+
+    if (m_Material.Load())
+        Error("Failed to load text material.");
+
+    int window_width, window_height;
+    context->GetSize(window_width, window_height);
+    const auto fw = static_cast<float>(window_width);
+    const auto fh = static_cast<float>(window_height);
+    const auto projection = glm::ortho(0.f, fw, 0.f, fh);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
+
+    m_AtlasMesh.SetVertices(
+        {
+            {{0, 0}, {0, 1}},
+            {{0, 1}, {0, 0}},
+            {{1, 1}, {1, 0}},
+            {{1, 0}, {1, 1}},
+        });
+    m_AtlasMesh.SetIndices(
+        {
+            0u,
+            1u,
+            2u,
+            2u,
+            3u,
+            0u,
+        });
 }
 
 DesktopTown::FontContext::~FontContext()
@@ -27,102 +59,8 @@ constexpr auto CHAR_RANGE = MAX_CHAR - MIN_CHAR + 1;
 constexpr auto NUM_TILES_RT = static_cast<int>(ceil(sqrt(CHAR_RANGE)));
 constexpr auto TILE_DELTA = 1.f / static_cast<float>(NUM_TILES_RT);
 
-void DesktopTown::FontContext::Init(const int window_width, const int window_height)
-{
-    m_Program = GLProgram::Create();
-
-    {
-        GLint count;
-        glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &count);
-        std::cerr << "Number of binary formats: " << count << std::endl;
-        for (int i = 0; i < count; ++i)
-        {
-            GLint name;
-            glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, &name);
-            std::cerr << "#" << i << ": 0x" << std::hex << name << std::dec << std::endl;
-        }
-    }
-
-    auto raw_data = ReadFile("text.gl", std::ios::binary);
-    if (raw_data.empty())
-    {
-        std::cerr << "Recompiling Program..." << std::endl;
-
-        const auto query = GLQuery::Create();
-        query.Measure(GL_TIME_ELAPSED, [&]
-        {
-            {
-                const auto shader = GLShader::Create(GL_VERTEX_SHADER);
-                const auto source = ReadFileText("shader/text/vertex.glsl");
-                shader.SetSource(source);
-                if (shader.CompileAndCheck())
-                    m_Program.Attach(shader);
-            }
-            {
-                const auto shader = GLShader::Create(GL_FRAGMENT_SHADER);
-                const auto source = ReadFileText("shader/text/fragment.glsl");
-                shader.SetSource(source);
-                if (shader.CompileAndCheck())
-                    m_Program.Attach(shader);
-            }
-
-            (void)m_Program.LinkAndCheck();
-            (void)m_Program.ValidateAndCheck();
-            m_Program.DetachAll();
-        });
-        GLuint64 time;
-        glGetQueryObjectui64v(query.GetName(), GL_QUERY_RESULT, &time);
-        std::cerr << "Done [" << time << " ns]" << std::endl;
-
-        const auto [format_, data_] = m_Program.GetBinary();
-
-        raw_data.resize(4 + data_.size());
-        *reinterpret_cast<GLenum*>(raw_data.data()) = format_;
-        for (unsigned i = 0; i < data_.size(); ++i)
-            raw_data[i + 4] = data_[i];
-
-        WriteFile("text.gl", raw_data, std::ios::binary);
-    }
-    else
-    {
-        std::cerr << "Loading Program Binary..." << std::endl;
-
-        const auto query = GLQuery::Create();
-        query.Measure(GL_TIME_ELAPSED, [&]
-        {
-            const auto format = *reinterpret_cast<GLenum*>(raw_data.data());
-            std::vector data(raw_data.begin() + 4, raw_data.end());
-            const GLBinary binary
-            {
-                format,
-                std::move(data),
-            };
-            (void)m_Program.SetBinaryAndCheck(binary);
-        });
-        GLuint64 time;
-        glGetQueryObjectui64v(query.GetName(), GL_QUERY_RESULT, &time);
-        std::cerr << "Done [" << time << " ns]" << std::endl;
-    }
-
-    const auto fw = static_cast<float>(window_width);
-    const auto fh = static_cast<float>(window_height);
-    const auto projection = glm::ortho(0.f, fw, 0.f, fh);
-    m_Program.SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
-
-    m_AtlasMesh.SetVertices({
-        {{0, 0}, {0, 1}},
-        {{0, 1}, {0, 0}},
-        {{1, 1}, {1, 0}},
-        {{1, 0}, {1, 1}},
-    });
-    m_AtlasMesh.SetIndices({
-        0, 1, 2,
-        2, 3, 0,
-    });
-}
-
 void DesktopTown::FontContext::LoadFont(
-    const std::string& filename,
+    const std::string &filename,
     const FT_UInt width,
     const FT_UInt height,
     const FT_Long index)
@@ -132,20 +70,22 @@ void DesktopTown::FontContext::LoadFont(
     FT_Set_Pixel_Sizes(face, width, height);
 
     unsigned max_width = 0, max_height = 0;
-    for (int c = MIN_CHAR; c < MAX_CHAR; ++c)
+    for (auto c = MIN_CHAR; c < MAX_CHAR; ++c)
     {
         FT_Load_Char(face, c, FT_LOAD_DEFAULT);
 
         const auto c_width = face->glyph->bitmap.width;
         const auto c_height = face->glyph->bitmap.rows;
 
-        if (c_width > max_width) max_width = c_width;
-        if (c_height > max_height) max_height = c_height;
+        if (c_width > max_width)
+            max_width = c_width;
+        if (c_height > max_height)
+            max_height = c_height;
     }
 
     m_CharMap.clear();
 
-    for (int c = MIN_CHAR; c < MAX_CHAR; ++c)
+    for (auto c = MIN_CHAR; c < MAX_CHAR; ++c)
     {
         FT_Load_Char(face, c, FT_LOAD_DEFAULT);
 
@@ -181,12 +121,15 @@ void DesktopTown::FontContext::LoadFont(
     m_Atlas.SetParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    for (int c = MIN_CHAR; c < MAX_CHAR; ++c)
+    for (auto c = MIN_CHAR; c < MAX_CHAR; ++c)
     {
         FT_Load_Char(face, c, FT_LOAD_RENDER);
 
         const auto c_width = static_cast<GLsizei>(face->glyph->bitmap.width);
         const auto c_height = static_cast<GLsizei>(face->glyph->bitmap.rows);
+
+        if (!c_width || !c_height || !face->glyph->bitmap.buffer)
+            continue;
 
         const auto off = c - MIN_CHAR;
         const auto i = static_cast<GLint>(off % NUM_TILES_RT * max_width);
@@ -199,11 +142,11 @@ void DesktopTown::FontContext::LoadFont(
 }
 
 void DesktopTown::FontContext::DrawText(
-    const std::wstring& text,
+    const std::wstring &text,
     const float start_x,
     const float start_y,
     const float scale,
-    const glm::vec3& color)
+    const glm::vec3 &color)
 {
     std::vector<Vertex> vertices(text.size() * 4);
     std::vector<GLuint> indices(text.size() * 6);
@@ -211,8 +154,8 @@ void DesktopTown::FontContext::DrawText(
     auto x = start_x;
     for (unsigned i = 0; i < text.size(); ++i)
     {
-        auto& c = text[i];
-        auto& [
+        auto &c = text[i];
+        auto &[
             texture_,
             size_,
             bearing_,
@@ -225,7 +168,7 @@ void DesktopTown::FontContext::DrawText(
         const auto w = static_cast<float>(size_.x) * scale;
         const auto h = static_cast<float>(size_.y) * scale;
 
-        const GLuint base = i * 4;
+        const auto base = i * 4;
 
         VecView(vertices, i * 4) = {
             Vertex{{xpos + 0, ypos + 0}, {texture_.x, texture_.w}},
@@ -234,8 +177,12 @@ void DesktopTown::FontContext::DrawText(
             Vertex{{xpos + w, ypos + 0}, {texture_.z, texture_.w}},
         };
         VecView(indices, i * 6) = {
-            base + 0, base + 1, base + 2,
-            base + 2, base + 3, base + 0,
+            base + 0,
+            base + 1,
+            base + 2,
+            base + 2,
+            base + 3,
+            base + 0,
         };
 
         x += static_cast<float>(advance_ >> 6) * scale;
@@ -246,12 +193,12 @@ void DesktopTown::FontContext::DrawText(
 
     m_Atlas.BindUnit(0);
 
-    const auto defer_pgm = m_Program.Bind();
+    const auto defer_material = m_Material->Bind();
 
     glm::mat4 model(1.f);
 
-    m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
-    m_Program.SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
+    m_Material->SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -265,18 +212,18 @@ void DesktopTown::FontContext::DrawAtlas(
     const float start_x,
     const float start_y,
     const float scalar,
-    const glm::vec3& color)
+    const glm::vec3 &color)
 {
     m_Atlas.BindUnit(0);
 
-    const auto defer_pgm = m_Program.Bind();
+    const auto defer_material = m_Material->Bind();
 
     glm::mat4 model(1.f);
     model = translate(model, glm::vec3(start_x, start_y, 0.f));
     model = scale(model, glm::vec3(static_cast<float>(m_Width) * scalar, static_cast<float>(m_Height) * scalar, 1.f));
 
-    m_Program.SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
-    m_Program.SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
+    m_Material->SetUniform<Uniform_Float3>("COLOR", color.x, color.y, color.z);
+    m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

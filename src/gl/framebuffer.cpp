@@ -15,13 +15,13 @@ DesktopTown::GLFramebuffer::~GLFramebuffer()
     glDeleteFramebuffers(1, &m_Name);
 }
 
-DesktopTown::GLFramebuffer::GLFramebuffer(GLFramebuffer&& other) noexcept
+DesktopTown::GLFramebuffer::GLFramebuffer(GLFramebuffer &&other) noexcept
     : GLObject(GL_FRAMEBUFFER, other.m_Name)
 {
     other.m_Name = 0;
 }
 
-DesktopTown::GLFramebuffer& DesktopTown::GLFramebuffer::operator=(GLFramebuffer&& other) noexcept
+DesktopTown::GLFramebuffer &DesktopTown::GLFramebuffer::operator=(GLFramebuffer &&other) noexcept
 {
     std::swap(m_Name, other.m_Name);
     return *this;

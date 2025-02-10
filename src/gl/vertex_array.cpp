@@ -16,13 +16,13 @@ DesktopTown::GLVertexArray::~GLVertexArray()
     glDeleteVertexArrays(1, &m_Name);
 }
 
-DesktopTown::GLVertexArray::GLVertexArray(GLVertexArray&& other) noexcept
+DesktopTown::GLVertexArray::GLVertexArray(GLVertexArray &&other) noexcept
     : GLObject(GL_VERTEX_ARRAY, other.m_Name)
 {
     other.m_Name = 0;
 }
 
-DesktopTown::GLVertexArray& DesktopTown::GLVertexArray::operator=(GLVertexArray&& other) noexcept
+DesktopTown::GLVertexArray &DesktopTown::GLVertexArray::operator=(GLVertexArray &&other) noexcept
 {
     std::swap(m_Name, other.m_Name);
     return *this;
@@ -31,15 +31,16 @@ DesktopTown::GLVertexArray& DesktopTown::GLVertexArray::operator=(GLVertexArray&
 DesktopTown::GLDefer DesktopTown::GLVertexArray::Bind() const
 {
     glBindVertexArray(m_Name);
-    return GLDefer([]
-    {
-        glBindVertexArray(0);
-    });
+    return GLDefer(
+        []
+        {
+            glBindVertexArray(0);
+        });
 }
 
 void DesktopTown::GLVertexArray::VertexBuffer(
     const GLuint binding_index,
-    const GLBuffer& buffer,
+    const GLBuffer &buffer,
     const GLintptr offset,
     const GLsizei stride) const
 {

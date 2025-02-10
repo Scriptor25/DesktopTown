@@ -15,13 +15,13 @@ DesktopTown::GLTexture::~GLTexture()
     glDeleteTextures(1, &m_Name);
 }
 
-DesktopTown::GLTexture::GLTexture(GLTexture&& other) noexcept
+DesktopTown::GLTexture::GLTexture(GLTexture &&other) noexcept
     : GLObject(GL_TEXTURE, other.m_Name)
 {
     other.m_Name = 0;
 }
 
-DesktopTown::GLTexture& DesktopTown::GLTexture::operator=(GLTexture&& other) noexcept
+DesktopTown::GLTexture &DesktopTown::GLTexture::operator=(GLTexture &&other) noexcept
 {
     std::swap(m_Name, other.m_Name);
     return *this;
@@ -30,10 +30,11 @@ DesktopTown::GLTexture& DesktopTown::GLTexture::operator=(GLTexture&& other) noe
 DesktopTown::GLDefer DesktopTown::GLTexture::Bind(const GLenum target) const
 {
     glBindTexture(target, m_Name);
-    return GLDefer([target]
-    {
-        glBindTexture(target, 0);
-    });
+    return GLDefer(
+        [target]
+        {
+            glBindTexture(target, 0);
+        });
 }
 
 void DesktopTown::GLTexture::BindUnit(const GLuint unit) const
@@ -76,7 +77,7 @@ void DesktopTown::GLTexture::SubImage(
     const GLsizei width,
     const GLenum format,
     const GLenum type,
-    const void* pixels) const
+    const void *pixels) const
 {
     glTextureSubImage1D(m_Name, level, xoffset, width, format, type, pixels);
 }
@@ -89,7 +90,7 @@ void DesktopTown::GLTexture::SubImage(
     const GLsizei height,
     const GLenum format,
     const GLenum type,
-    const void* pixels) const
+    const void *pixels) const
 {
     glTextureSubImage2D(m_Name, level, xoffset, yoffset, width, height, format, type, pixels);
 }
@@ -104,7 +105,7 @@ void DesktopTown::GLTexture::SubImage(
     const GLsizei depth,
     const GLenum format,
     const GLenum type,
-    const void* pixels) const
+    const void *pixels) const
 {
     glTextureSubImage3D(m_Name, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
 }

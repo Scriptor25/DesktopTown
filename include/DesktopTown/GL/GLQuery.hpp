@@ -13,12 +13,12 @@ namespace DesktopTown
         GLQuery();
         ~GLQuery() override;
 
-        GLQuery(const GLQuery&) = delete;
-        GLQuery& operator=(const GLQuery&) = delete;
-        GLQuery(GLQuery&& other) noexcept;
-        GLQuery& operator=(GLQuery&& other) noexcept;
+        GLQuery(const GLQuery &) = delete;
+        GLQuery &operator=(const GLQuery &) = delete;
+        GLQuery(GLQuery &&other) noexcept;
+        GLQuery &operator=(GLQuery &&other) noexcept;
 
-        void Measure(GLenum target, const std::function<void()>& callback) const;
+        void Measure(GLenum target, const std::function<void()> &callback) const;
 
         static GLQuery Create();
     };

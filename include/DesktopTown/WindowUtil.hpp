@@ -6,5 +6,5 @@
 
 namespace DesktopTown
 {
-    void glfwHideTaskbarIcon(GLFWwindow* window);
+    void glfwHideTaskbarIcon(GLFWwindow *window);
 }

@@ -1,9 +1,9 @@
 #include <fstream>
 #include <DesktopTown/FileUtil.hpp>
 
-std::vector<char> DesktopTown::ReadFile(const std::string& filename, const std::ios::openmode mode)
+std::vector<char> DesktopTown::ReadFile(const std::filesystem::path &path, const std::ios::openmode mode)
 {
-    std::fstream stream(filename, mode | std::ios::in | std::ios::ate);
+    std::fstream stream(path, mode | std::ios::in | std::ios::ate);
     if (!stream.is_open())
         return {};
 
@@ -16,18 +16,23 @@ std::vector<char> DesktopTown::ReadFile(const std::string& filename, const std::
     return buffer;
 }
 
-void DesktopTown::WriteFile(const std::string& filename, const std::vector<char>& data, const std::ios::openmode mode)
+bool DesktopTown::WriteFile(
+    const std::filesystem::path &path,
+    const std::vector<char> &data,
+    const std::ios::openmode mode)
 {
-    std::fstream stream(filename, mode | std::ios::out);
+    std::fstream stream(path, mode | std::ios::out);
     if (!stream.is_open())
-        return;
+        return true;
 
     stream.write(data.data(), static_cast<std::streamsize>(data.size()));
     stream.close();
+
+    return false;
 }
 
-std::string DesktopTown::ReadFileText(const std::string& filename, std::ios::openmode mode)
+std::string DesktopTown::ReadFileText(const std::filesystem::path &path, const std::ios::openmode mode)
 {
-    const auto data = ReadFile(filename, mode);
+    const auto data = ReadFile(path, mode);
     return {data.begin(), data.end()};
 }

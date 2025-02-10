@@ -1,9 +1,10 @@
 #include <string>
 #include <DesktopTown/Context.hpp>
+#include <DesktopTown/Error.hpp>
 #include <DesktopTown/GL.hpp>
 #include <DesktopTown/WindowUtil.hpp>
 
-static void on_error(const int error_code, const char* description)
+static void on_error(const int error_code, const char *description)
 {
     fprintf(stderr, "[GLFW 0x%08X] %s\r\n", error_code, description);
 }
@@ -12,12 +13,32 @@ static void APIENTRY on_debug(
     const GLenum /*source*/,
     const GLenum /*type*/,
     const GLuint id,
-    const GLenum /*severity*/,
+    const GLenum severity,
     const GLsizei length,
-    const GLchar* message,
-    const void* /*user_param*/)
+    const GLchar *message,
+    const void * /*user_param*/)
 {
-    fprintf(stderr, "[OpenGL 0x%08X] %.*s\r\n", id, length, message);
+    const char *level;
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:
+            level = "ERROR  ";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            level = "WARNING";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            level = "VERBOSE";
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            level = "INFO   ";
+            break;
+        default:
+            level = "UNKNOWN";
+            break;
+    }
+
+    fprintf(stderr, "[OpenGL %s 0x%08X] %.*s\r\n", level, id, length, message);
     fflush(stderr);
 }
 
@@ -30,6 +51,7 @@ DesktopTown::Context::Context()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
@@ -55,6 +77,7 @@ DesktopTown::Context::Context()
     glfwMakeContextCurrent(m_Window);
     glfwSwapInterval(1);
 
+    glewExperimental = GL_TRUE;
     glewInit();
 
     glEnable(GL_MULTISAMPLE);
@@ -62,7 +85,8 @@ DesktopTown::Context::Context()
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(on_debug, this);
 
-    glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
+    // glClearColor(0.1f, 0.02f, 0.0f, 0.0f);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
 }
 
 DesktopTown::Context::~Context()
@@ -98,12 +122,12 @@ void DesktopTown::Context::Stop() const
     glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
 }
 
-GLFWwindow* DesktopTown::Context::GetWindow() const
+GLFWwindow *DesktopTown::Context::GetWindow() const
 {
     return m_Window;
 }
 
-void DesktopTown::Context::GetSize(int& width, int& height) const
+void DesktopTown::Context::GetSize(int &width, int &height) const
 {
     glfwGetFramebufferSize(m_Window, &width, &height);
 }

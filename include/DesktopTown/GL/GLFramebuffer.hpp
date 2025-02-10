@@ -13,10 +13,10 @@ namespace DesktopTown
         GLFramebuffer();
         ~GLFramebuffer() override;
 
-        GLFramebuffer(const GLFramebuffer&) = delete;
-        GLFramebuffer& operator=(const GLFramebuffer&) = delete;
-        GLFramebuffer(GLFramebuffer&& other) noexcept;
-        GLFramebuffer& operator=(GLFramebuffer&& other) noexcept;
+        GLFramebuffer(const GLFramebuffer &) = delete;
+        GLFramebuffer &operator=(const GLFramebuffer &) = delete;
+        GLFramebuffer(GLFramebuffer &&other) noexcept;
+        GLFramebuffer &operator=(GLFramebuffer &&other) noexcept;
 
         static GLFramebuffer Create();
     };

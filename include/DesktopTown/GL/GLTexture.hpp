@@ -13,12 +13,12 @@ namespace DesktopTown
         GLTexture();
         ~GLTexture() override;
 
-        GLTexture(const GLTexture&) = delete;
-        GLTexture& operator=(const GLTexture&) = delete;
-        GLTexture(GLTexture&& other) noexcept;
-        GLTexture& operator=(GLTexture&& other) noexcept;
+        GLTexture(const GLTexture &) = delete;
+        GLTexture &operator=(const GLTexture &) = delete;
+        GLTexture(GLTexture &&other) noexcept;
+        GLTexture &operator=(GLTexture &&other) noexcept;
 
-        GLDefer Bind(GLenum target) const;
+        [[nodiscard]] GLDefer Bind(GLenum target) const;
         void BindUnit(GLuint unit) const;
         void SetParameter(GLenum pname, GLint param) const;
         void Storage(GLsizei levels, GLenum internalformat, GLsizei width) const;
@@ -30,7 +30,7 @@ namespace DesktopTown
             GLsizei width,
             GLenum format,
             GLenum type,
-            const void* pixels) const;
+            const void *pixels) const;
         void SubImage(
             GLint level,
             GLint xoffset,
@@ -39,7 +39,7 @@ namespace DesktopTown
             GLsizei height,
             GLenum format,
             GLenum type,
-            const void* pixels) const;
+            const void *pixels) const;
         void SubImage(
             GLint level,
             GLint xoffset,
@@ -50,7 +50,7 @@ namespace DesktopTown
             GLsizei depth,
             GLenum format,
             GLenum type,
-            const void* pixels) const;
+            const void *pixels) const;
         [[nodiscard]] GLTexture View(
             GLenum target,
             GLenum internalformat,

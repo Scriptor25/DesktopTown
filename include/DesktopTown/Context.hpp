@@ -15,8 +15,8 @@ namespace DesktopTown
         void Start();
         void Stop() const;
 
-        [[nodiscard]] GLFWwindow* GetWindow() const;
-        void GetSize(int& width, int& height) const;
+        [[nodiscard]] GLFWwindow *GetWindow() const;
+        void GetSize(int &width, int &height) const;
 
     protected:
         virtual void OnStart();
@@ -24,6 +24,6 @@ namespace DesktopTown
         virtual void OnStop();
 
     private:
-        GLFWwindow* m_Window;
+        GLFWwindow *m_Window;
     };
 }

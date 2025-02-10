@@ -1,7 +1,8 @@
 #include <DesktopTown/GL/GLObject.hpp>
 
 DesktopTown::GLObject::GLObject(const GLenum type, const GLuint name)
-    : m_Type(type), m_Name(name)
+    : m_Type(type),
+      m_Name(name)
 {
 }
 
@@ -21,7 +22,7 @@ std::string DesktopTown::GLObject::GetLabel() const
     return label;
 }
 
-void DesktopTown::GLObject::SetLabel(const std::string& label) const
+void DesktopTown::GLObject::SetLabel(const std::string &label) const
 {
     glObjectLabel(m_Type, m_Name, static_cast<GLsizei>(label.size()), label.c_str());
 }
