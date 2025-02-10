@@ -13,7 +13,7 @@ namespace DesktopTown
         explicit Sprite(Context *context);
 
         void Load(const std::string &filename);
-        void Draw(unsigned frame, float x, float y, float s);
+        bool Draw(unsigned frame, float left, float bottom, float frame_scale);
 
     private:
         Context *m_Context;

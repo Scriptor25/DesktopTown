@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <DesktopTown/Context.hpp>
 #include <DesktopTown/Error.hpp>
@@ -41,11 +42,35 @@ static void APIENTRY on_debug(
 
     fprintf(stderr, "[OpenGL %s 0x%08X] %.*s\r\n", level, id, length, message);
     fflush(stderr);
+
+    if (severity == GL_DEBUG_SEVERITY_HIGH)
+        __debugbreak();
 }
 
 static void on_framebuffer_size(GLFWwindow *window, int, int)
 {
     static_cast<DesktopTown::Context *>(glfwGetWindowUserPointer(window))->Invalidate();
+}
+
+bool DesktopTown::ButtonState::Press() const
+{
+    return !Previous && Current;
+}
+
+bool DesktopTown::ButtonState::Release() const
+{
+    return Previous && !Current;
+}
+
+bool DesktopTown::ButtonState::Repeat() const
+{
+    return Previous && Current;
+}
+
+void DesktopTown::ButtonState::Update(const bool next)
+{
+    Previous = Current;
+    Current = next;
 }
 
 DesktopTown::Context::Context()
@@ -119,6 +144,21 @@ void DesktopTown::Context::Start()
         OnUpdate();
 
         glfwSwapBuffers(m_Window);
+
+        if (m_WantFocus.empty())
+        {
+            glfwSetWindowAttrib(m_Window, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
+        }
+        else
+        {
+            glfwSetWindowAttrib(m_Window, GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
+            glfwFocusWindow(m_Window);
+        }
+
+        for (auto i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; ++i)
+            m_KeyStateMap[i].Update(glfwGetKey(m_Window, i) == GLFW_PRESS);
+        for (auto i = GLFW_MOUSE_BUTTON_1; i < GLFW_MOUSE_BUTTON_LAST; ++i)
+            m_MouseStateMap[i].Update(glfwGetMouseButton(m_Window, i) == GLFW_PRESS);
     }
 
     OnStop();
@@ -137,6 +177,57 @@ GLFWwindow *DesktopTown::Context::GetWindow() const
 void DesktopTown::Context::GetSize(int &width, int &height) const
 {
     glfwGetFramebufferSize(m_Window, &width, &height);
+}
+
+void DesktopTown::Context::GetCursor(float &xpos, float &ypos) const
+{
+    int width, height;
+    GetSize(width, height);
+
+    double x, y;
+    glfwGetCursorPos(m_Window, &x, &y);
+    xpos = x;
+    ypos = height - y - 1;
+}
+
+bool DesktopTown::Context::IsMouseButtonDown(const int button) const
+{
+    return m_MouseStateMap.at(button).Press();
+}
+
+bool DesktopTown::Context::IsMouseButtonUp(const int button) const
+{
+    return m_MouseStateMap.at(button).Release();
+}
+
+bool DesktopTown::Context::IsMouseButton(const int button) const
+{
+    return m_MouseStateMap.at(button).Repeat();
+}
+
+bool DesktopTown::Context::IsKeyDown(const int key) const
+{
+    return m_KeyStateMap.at(key).Press();
+}
+
+bool DesktopTown::Context::IsKeyUp(const int key) const
+{
+    return m_KeyStateMap.at(key).Release();
+}
+
+int DesktopTown::Context::GetKey(const int key) const
+{
+    return m_KeyStateMap.at(key).Repeat();
+}
+
+void DesktopTown::Context::AddFocus(void *handle)
+{
+    m_WantFocus.emplace(handle);
+}
+
+void DesktopTown::Context::RemoveFocus(void *handle)
+{
+    m_WantFocus.erase(handle);
 }
 
 void DesktopTown::Context::Invalidate()

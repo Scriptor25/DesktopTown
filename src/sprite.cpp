@@ -2,6 +2,7 @@
 #include <DesktopTown/Context.hpp>
 #include <DesktopTown/Error.hpp>
 #include <DesktopTown/Sprite.hpp>
+#include <DesktopTown/Util.hpp>
 #include <glm/ext.hpp>
 
 DesktopTown::Sprite::Sprite(Context *context)
@@ -57,9 +58,9 @@ void DesktopTown::Sprite::Load(const std::string &filename)
 
     if (height % width != 0)
     {
-        m_FrameScale = 0.f;
-        m_FrameWidth = width;
-        m_FrameHeight = height;
+        m_FrameScale = 1.f;
+        m_FrameWidth = static_cast<float>(width);
+        m_FrameHeight = static_cast<float>(height);
         m_NumFrames = 0;
     }
     else
@@ -71,24 +72,30 @@ void DesktopTown::Sprite::Load(const std::string &filename)
     }
 }
 
-void DesktopTown::Sprite::Draw(unsigned frame, const float x, const float y, const float s)
+bool DesktopTown::Sprite::Draw(unsigned frame, const float left, const float bottom, const float frame_scale)
 {
-    frame %= m_NumFrames;
+    if (m_NumFrames)
+        frame %= m_NumFrames;
 
     m_Texture.BindUnit(0);
 
     const auto defer_material = m_Material->Bind();
 
     glm::mat4 model(1.f);
-    model = translate(model, glm::vec3(x, y, 0.f));
-    model = scale(model, glm::vec3(s * m_FrameWidth, s * m_FrameHeight, 1.f));
+    model = translate(model, glm::vec3(left, bottom, 0.f));
+    model = scale(model, glm::vec3(frame_scale * m_FrameWidth, frame_scale * m_FrameHeight, 1.f));
     const auto &projection = m_Context->GetProjection();
 
     m_Material->SetUniformMatrix<Uniform_Matrix4x4>("MODEL", 1, GL_FALSE, &model[0][0]);
     m_Material->SetUniformMatrix<Uniform_Matrix4x4>("PROJECTION", 1, GL_FALSE, &projection[0][0]);
 
     m_Material->SetUniform<Uniform_Float2>("FRAME_SCALE", 1.f, m_FrameScale);
-    m_Material->SetUniform<Uniform_Float2>("FRAME_OFFSET", 0.f, static_cast<float>(frame) * m_FrameScale);
+    m_Material->SetUniform<Uniform_Float2>(
+        "FRAME_OFFSET",
+        0.f,
+        m_NumFrames
+            ? static_cast<float>(frame) * m_FrameScale
+            : 0.f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -96,4 +103,16 @@ void DesktopTown::Sprite::Draw(unsigned frame, const float x, const float y, con
     m_Mesh.Draw();
 
     glDisable(GL_BLEND);
+
+    float cursor_x, cursor_y;
+    m_Context->GetCursor(cursor_x, cursor_y);
+    if (Rect(left, bottom, left + frame_scale * m_FrameWidth, bottom + frame_scale * m_FrameHeight)
+        .Contains(cursor_x, cursor_y))
+    {
+        m_Context->AddFocus(this);
+        return true;
+    }
+
+    m_Context->RemoveFocus(this);
+    return false;
 }
